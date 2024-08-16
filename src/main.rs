@@ -1,4 +1,6 @@
+#![allow(unused_imports)]
 use itertools::Itertools;
+use std::env;
 
 #[allow(dead_code)]
 struct LatinSolver {
@@ -14,6 +16,9 @@ struct LatinSolver {
 
 #[allow(dead_code)]
 impl LatinSolver {
+
+    /**************************** Initializers ****************************/
+
     fn new(order: usize) -> LatinSolver {
         LatinSolver {
             order: order,
@@ -23,6 +28,8 @@ impl LatinSolver {
             col: vec![false; order.pow(2)], // set to true when the val is present in col y
         }
     }
+
+    /**************************** Cube functions ****************************/
 
     // Get the index in the cube vector of the boolean for value n at (x, y)
     fn get_cube_pos(&self, x: usize, y: usize, n: usize) -> usize {
@@ -44,14 +51,34 @@ impl LatinSolver {
     
     // To string method for the cube data structure
     fn cube_to_string(&self) -> String {
-        let mut s = String::from("");
+        let mut result = String::from("");
 
-        s.push_str("lo");
-        s
+        for i in 0..self.order {
+            let mut row_arr: Vec<String> = Vec::new();
+            for j in 0..self.order {
+                let mut cell_arr: Vec<char> = Vec::new();
+                for n in 1..=self.order {
+                    if self.get_cube_value(i, j, n) {
+                        cell_arr.push(char::from_digit(n as u32, 10).unwrap());
+                    } else {
+                        cell_arr.push('*');
+                    }
+                }
+                row_arr.push(cell_arr.iter().join(""));
+            }
+
+            let row = " ".to_string() + &row_arr.iter().join(" | ") + &" ";
+            let gap = if i < self.order - 1 {
+                "\n".to_string() + &"_".repeat(self.order * (self.order + 3) - 1) + "\n"
+            } else {
+                 "\n".to_string()
+            };
+            result = result + &row + &gap;
+        }
+        result
     }
 
-
-
+    /**************************** Grid functions ****************************/
 
     // Get the position in the grid data structure at coordinates (x,y)
     fn get_grid_pos(&self, x: usize, y: usize) -> usize {
@@ -65,6 +92,9 @@ impl LatinSolver {
 
     // Set the final value in the grid of where the digit belongs
     fn set_grid_value(&mut self, x: usize, y: usize, n: usize) -> () {
+        // First assert attempt
+        assert!(x < self.order && y < self.order && n <= self.order, "All quantities must be within the grid dimensions");
+
         let location = self.get_grid_pos(x, y);
         self.grid[location] = n;
     }
@@ -73,17 +103,17 @@ impl LatinSolver {
     fn grid_to_string(&self) -> String {
         let mut result = String::from("");
 
-        for i in 0..5 {
+        for i in 0..self.order {
             let mut arr: Vec<usize> = Vec::new();
-            for j in 0..5 {
+            for j in 0..self.order {
                 arr.push(self.get_grid_value(i, j));
             }
 
             let row = " ".to_string() + &arr.iter().join(" | ") + &" ";
-            let gap = if i < self.order - 2 {
-                "\n".to_string() + &"_".repeat((self.order - 1) * 4 - 1) + "\n"
+            let gap = if i < self.order - 1 {
+                "\n".to_string() + &"_".repeat((self.order) * 4 - 1) + "\n"
             } else {
-                 "".to_string()
+                 "\n".to_string()
             };
             result = result + &row + &gap;
         }
@@ -127,21 +157,20 @@ impl LatinSolver {
 
 }
 
-
-
-
 fn main() {
+    //env::set_var("RUST_BACKTRACE", "1");
     let mut ls = LatinSolver::new(6);
     println!("{}", ls.cube.len());
     println!("{}", ls.get_cube_pos(3, 3, 2));
     println!("{}", ls.get_cube_value(3, 3, 2));
     println!("{}", ls.get_grid_value(3, 3));
-    ls.place_digit(3, 3, 5);
+
+    ls.place_digit(3, 3, 3);
+    ls.place_digit(1, 3, 2);
+
     println!("{}", ls.get_cube_value(3, 3, 2));
-    println!("{}", ls.get_cube_value(3, 3, 5));
+    println!("{}", ls.get_cube_value(3, 3, 3));
 
     println!("{}", ls.cube_to_string());
     println!("{}", ls.grid_to_string())
-
-
 }
