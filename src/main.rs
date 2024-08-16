@@ -1,3 +1,5 @@
+use itertools::Itertools;
+
 #[allow(dead_code)]
 struct LatinSolver {
     order: usize,
@@ -41,10 +43,10 @@ impl LatinSolver {
     }
     
     // To string method for the cube data structure
-    fn cube_to_string() -> String {
+    fn cube_to_string(&self) -> String {
         let mut s = String::from("");
 
-
+        s.push_str("lo");
         s
     }
 
@@ -68,11 +70,24 @@ impl LatinSolver {
     }
 
     // To string method for the cube data structure
-    fn grid_to_string() -> String {
-        let mut s = String::from("");
-        
+    fn grid_to_string(&self) -> String {
+        let mut result = String::from("");
 
-        s
+        for i in 0..5 {
+            let mut arr: Vec<usize> = Vec::new();
+            for j in 0..5 {
+                arr.push(self.get_grid_value(i, j));
+            }
+
+            let row = " ".to_string() + &arr.iter().join(" | ") + &" ";
+            let gap = if i < self.order - 2 {
+                "\n".to_string() + &"_".repeat((self.order - 1) * 4 - 1) + "\n"
+            } else {
+                 "".to_string()
+            };
+            result = result + &row + &gap;
+        }
+        result
     }
 
 
@@ -86,33 +101,29 @@ impl LatinSolver {
         self.set_grid_value(x, y, n);
 
         // update the cube structure along the row
-        for i in 0..5 {
+        for i in 0..self.order {
             if i != x {
                 self.set_cube_value(i, y, n, false)
             }
         }
 
         // update the cube structure along the column
-        for i in 0..5 {
+        for i in 0..self.order {
             if i != y {
                 self.set_cube_value(x, i, n, false)
             }
         }
         
         // update all other n's at that position
-        for i in 1..=5 {
+        for i in 1..=self.order {
             if i != n { 
                 self.set_cube_value(x, y, i, false);
             }
         }
 
+        //todo update rows and cols data structures
+
     }
-
-   
-
-    
-    
-
 
 }
 
@@ -128,6 +139,9 @@ fn main() {
     ls.place_digit(3, 3, 5);
     println!("{}", ls.get_cube_value(3, 3, 2));
     println!("{}", ls.get_cube_value(3, 3, 5));
+
+    println!("{}", ls.cube_to_string());
+    println!("{}", ls.grid_to_string())
 
 
 }
