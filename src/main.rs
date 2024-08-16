@@ -1,20 +1,19 @@
 #![allow(unused_imports)]
+#![allow(dead_code)]
 use itertools::Itertools;
 use std::env;
 
-#[allow(dead_code)]
+/// An object that contains solving data for Latin Square puzzles
 struct LatinSolver {
-    order: usize,
-    cube: Vec<bool>, // order^3
+    order: usize,       // the dimension of the square KenKen grid
+    cube: Vec<bool>,    // order^3
 
     // might be useful to have grid appear elsewhere as it's own type
-    // digit is a number from 1 to order (not just at 0 and 1)
-    grid: Vec<usize>, // order^2
-    row: Vec<bool>, // order^2
-    col: Vec<bool>, // order^2
+    grid: Vec<usize>,   // order^2
+    row: Vec<bool>,     // order^2
+    col: Vec<bool>,     // order^2
 }
 
-#[allow(dead_code)]
 impl LatinSolver {
 
     /**************************** Initializers ****************************/
@@ -23,9 +22,9 @@ impl LatinSolver {
         LatinSolver {
             order: order,
             cube: vec![true; order.pow(3)], // false when value is not a possibility in that square
-            grid: vec![0; order.pow(2)],
-            row: vec![false; order.pow(2)], // set to true when the val is present in row x
-            col: vec![false; order.pow(2)], // set to true when the val is present in col y
+            grid: vec![0; order.pow(2)],    // The completed grid of values 1..order, 0s before solved
+            row: vec![false; order.pow(2)], // false when the val is not yet present in row x
+            col: vec![false; order.pow(2)], // false when the val is not yet present in col y
         }
     }
 
@@ -49,13 +48,17 @@ impl LatinSolver {
         self.cube[position] = b;
     }
     
-    // To string method for the cube data structure
+    // To_String method for the cube data structure
     fn cube_to_string(&self) -> String {
         let mut result = String::from("");
 
         for i in 0..self.order {
+            // Make an array of all the contents of each cell in the row
             let mut row_arr: Vec<String> = Vec::new();
             for j in 0..self.order {
+
+                // Make an array for the contents of each cell
+                // It will have a digit if the digit is still available, otherwise a '*'
                 let mut cell_arr: Vec<char> = Vec::new();
                 for n in 1..=self.order {
                     if self.get_cube_value(i, j, n) {
@@ -67,6 +70,7 @@ impl LatinSolver {
                 row_arr.push(cell_arr.iter().join(""));
             }
 
+            // At the end of the row, add the row, then add a gap below it
             let row = " ".to_string() + &row_arr.iter().join(" | ") + &" ";
             let gap = if i < self.order - 1 {
                 "\n".to_string() + &"_".repeat(self.order * (self.order + 3) - 1) + "\n"
@@ -120,8 +124,7 @@ impl LatinSolver {
         result
     }
 
-
-
+    /************************** Solving functions **************************/
 
     // Place a digit in the final grid,
     // and update the data strutures storing the availibility of digits
