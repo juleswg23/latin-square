@@ -32,24 +32,24 @@ impl LatinSolver {
     /**************************** Cube functions ****************************/
 
     // Get the index in the cube vector of the boolean for value n at (x, y)
-    fn get_cube_pos(&self, x: usize, y: usize, n: usize) -> usize {
+    fn get_cube_loc(&self, x: usize, y: usize, n: usize) -> usize {
         let location = (x * self.order + y) * self.order; // try removing &
         location + n - 1
     }
 
     // True means the value (n) is still possible at that coordinate (x,y)
     fn get_cube_value(&self, x: usize, y: usize, n: usize) -> bool {
-        let position = self.get_cube_pos(x, y, n);
-        self.cube[position]
+        let location = self.get_cube_loc(x, y, n);
+        self.cube[location]
     }
 
     // Update the cube data structure to be true or false at (x,y) to bool b
     fn set_cube_value(&mut self, x: usize, y: usize, n: usize, b: bool) -> () {
-        let position = self.get_cube_pos(x, y, n);
-        self.cube[position] = b;
+        let location = self.get_cube_loc(x, y, n);
+        self.cube[location] = b;
     }
 
-    fn get_cube_pos_subarray(&self, x: usize, y:usize) -> Vec<bool> {
+    fn get_cube_loc_subarray(&self, x: usize, y:usize) -> Vec<bool> {
         let location = (x * self.order + y) * self.order;
         let result = &self.cube[location..location+self.order];
         result.to_vec() // try without the to_vec()
@@ -91,14 +91,14 @@ impl LatinSolver {
 
     /**************************** Grid functions ****************************/
 
-    // Get the position in the grid data structure at coordinates (x,y)
-    fn get_grid_pos(&self, x: usize, y: usize) -> usize {
+    // Get the location in the grid data structure at coordinates (x,y)
+    fn get_grid_loc(&self, x: usize, y: usize) -> usize {
         x * self.order + y
     }
 
     // Get the value at the grid
     fn get_grid_value(&self, x: usize, y: usize) -> usize {
-        self.grid[self.get_grid_pos(x, y)]
+        self.grid[self.get_grid_loc(x, y)]
     }
 
     // Set the final value in the grid of where the digit belongs
@@ -106,10 +106,11 @@ impl LatinSolver {
         // First assert attempt
         assert!(x < self.order && y < self.order && n <= self.order, "All quantities must be within the grid dimensions");
 
-        let location = self.get_grid_pos(x, y);
+        let location = self.get_grid_loc(x, y);
         self.grid[location] = n;
     }
 
+    // Set grid value to 0 at location (x, y)
     fn reset_grid_value(&mut self, x: usize, y: usize) -> () {
         self.set_grid_value(x, y, 0);
     }
@@ -159,7 +160,7 @@ impl LatinSolver {
             }
         }
         
-        // update all other n's at that position
+        // update all other n's at that location
         for i in 1..=self.order {
             if i != n { 
                 self.set_cube_value(x, y, i, false);
@@ -172,11 +173,19 @@ impl LatinSolver {
 
     }
 
-    fn find_unsolved_position(&mut self) -> Option<(usize, usize, Vec<usize>)> {
+    // Returns the location and vector of available digits at that location from the cube structure
+    // Or, if no location is found with multiple possibilities, returns none
+    // CAREFUL - it updates the cube and grid structures if they are out of sync.
+    // TODO later change this to read-only on the self param
+    fn find_unsolved_location(&mut self) -> Option<(usize, usize, Vec<usize>)> {
         for i in 0..self.order {
             for j in 0..self.order {
-                let cube_subarray: Vec<bool> = self.get_cube_pos_subarray(i, j);
+                // Our subarray of the cube array at location i,j
+                let cube_subarray: Vec<bool> = self.get_cube_loc_subarray(i, j);
+
+                // Digits from 1..=order that are available at that location
                 let mut available_digits: Vec<usize> = Vec::new();
+
                 for n in 0..self.order {
                     if cube_subarray[n] {
                         available_digits.push(n+1);
@@ -186,23 +195,25 @@ impl LatinSolver {
                 // Return the digits available at i, j
                 if available_digits.len() > 1 {
                     return Some((i, j, available_digits));
+
+                // othereise make sure all data structures updated
                 } else if available_digits.len() == 1 {
-                    
-                    // make sure all data structures updated
                     if self.get_grid_value(i, j) == 0 {
                         // This might cause problems of version/clone
                         self.place_digit(i, j, available_digits[0]);
                     }
                 } else {
+                    // Should only happen when some location has no possibilities
                     return None;
                 }
             }
         }
-        println!("returning none");
+        // Should only happen when whole puzzle is solved.
         return None;
          
     }
 
+    // Returns true iff puzzle is solved.
     fn check_solved(&self) -> bool {
         for &elem in &self.grid {
             if elem == 0 {
@@ -212,9 +223,9 @@ impl LatinSolver {
         true
     }
 
-    
+    // Solve by recursively guessing, then backtracing up the tree
     fn recursive_solve(&mut self) -> bool {
-        if let Some((x, y, available_digits)) = self.find_unsolved_position() {
+        if let Some((x, y, available_digits)) = self.find_unsolved_location() {
             for n in available_digits {
                 let (prev_grid, prev_cube) = self.place_digit(x, y, n);
                 if self.recursive_solve() {
@@ -242,7 +253,7 @@ fn main() {
     //env::set_var("RUST_BACKTRACE", "1");
     let mut ls = LatinSolver::new(9);
     println!("{}", ls.cube.len());
-    println!("{}", ls.get_cube_pos(3, 3, 4));
+    println!("{}", ls.get_cube_loc(3, 3, 4));
     println!("{}", ls.get_cube_value(3, 3, 2));
     println!("{}", ls.get_grid_value(3, 3));
 
