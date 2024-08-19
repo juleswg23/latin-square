@@ -2,6 +2,7 @@
 #![allow(dead_code)]
 use itertools::Itertools;
 use std::env;
+use std::cmp::Ordering;
 
 /// An object that contains solving data for Latin Square puzzles
 struct LatinSolver {
@@ -46,6 +47,12 @@ impl LatinSolver {
     fn set_cube_value(&mut self, x: usize, y: usize, n: usize, b: bool) -> () {
         let position = self.get_cube_pos(x, y, n);
         self.cube[position] = b;
+    }
+
+    fn get_cube_pos_subarray(&self, x: usize, y:usize) -> Vec<bool> {
+        let location = (x * self.order + y) * self.order;
+        let result = &self.cube[location..location+self.order];
+        result.to_vec()
     }
     
     // To_String method for the cube data structure
@@ -103,6 +110,10 @@ impl LatinSolver {
         self.grid[location] = n;
     }
 
+    fn reset_grid_value(&mut self, x: usize, y: usize) -> () {
+        self.set_grid_value(x, y, 0);
+    }
+
     // To string method for the cube data structure
     fn grid_to_string(&self) -> String {
         let mut result = String::from("");
@@ -128,8 +139,9 @@ impl LatinSolver {
 
     // Place a digit in the final grid,
     // and update the data strutures storing the availibility of digits
-    fn place_digit(&mut self, x: usize, y:usize, n: usize) -> () {
-        
+    fn place_digit(&mut self, x: usize, y:usize, n: usize) -> (Vec<usize>, Vec<bool>) {
+        let old_data = (self.grid.clone(), self.cube.clone());
+
         // place it in the grid structure
         self.set_grid_value(x, y, n);
 
@@ -156,23 +168,93 @@ impl LatinSolver {
 
         //todo update rows and cols data structures
 
+        return old_data;
+
     }
 
+    fn find_unsolved_position(&mut self) -> Option<(usize, usize, Vec<usize>)> {
+        for i in 0..self.order {
+            for j in 0..self.order {
+                let cube_subarray: Vec<bool> = self.get_cube_pos_subarray(i, j);
+                let mut available_digits: Vec<usize> = Vec::new();
+                for n in 0..self.order {
+                    if cube_subarray[n] {
+                        available_digits.push(n+1);
+                    }
+                }
+
+                // Return the digits available at i, j
+                if available_digits.len() > 1 {
+                    return Some((i, j, available_digits));
+                } else if available_digits.len() == 1 {
+                    
+                    // make sure all data structures updated
+                    if self.get_grid_value(i, j) == 0 {
+                        // This might cause problems of version/clone
+                        self.place_digit(i, j, available_digits[0]);
+                    }
+                } else {
+                    return None;
+                }
+            }
+        }
+        println!("returning none");
+        return None;
+         
+    }
+
+    
+    fn recursive_solve(&mut self) -> bool {
+        if let Some((x, y, available_digits)) = self.find_unsolved_position() {
+            for n in available_digits {
+                let (prev_grid, prev_cube) = self.place_digit(x, y, n);
+                if self.recursive_solve() {
+                    return true;
+                } else {
+                    // revert to prior cube and grid
+                    self.cube = prev_cube;
+                    self.grid = prev_grid;
+                    //self.reset_grid_value(x, y);
+                }
+            }
+            return false;
+
+        // else no avaiable digits were found
+        // check if this means we're solved or not
+        } else {
+            // todo maybe revisit and fix
+            let mut count = 0;
+            for &elem in self.cube.iter() {
+                //println!("count {}", elem);
+
+                if elem {
+                    count += 1;
+                }
+            }
+            return count == self.order.pow(2);
+        } 
+    }
 }
 
 fn main() {
     //env::set_var("RUST_BACKTRACE", "1");
-    let mut ls = LatinSolver::new(6);
+    let mut ls = LatinSolver::new(4);
     println!("{}", ls.cube.len());
-    println!("{}", ls.get_cube_pos(3, 3, 2));
+    println!("{}", ls.get_cube_pos(3, 3, 4));
     println!("{}", ls.get_cube_value(3, 3, 2));
     println!("{}", ls.get_grid_value(3, 3));
 
+
     ls.place_digit(3, 3, 3);
     ls.place_digit(1, 3, 2);
+    ls.place_digit(0, 0, 2);
+
 
     println!("{}", ls.get_cube_value(3, 3, 2));
     println!("{}", ls.get_cube_value(3, 3, 3));
+
+    println!("solve success? {}", ls.recursive_solve());
+
 
     println!("{}", ls.cube_to_string());
     println!("{}", ls.grid_to_string())
