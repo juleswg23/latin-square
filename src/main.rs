@@ -52,7 +52,7 @@ impl LatinSolver {
     fn get_cube_pos_subarray(&self, x: usize, y:usize) -> Vec<bool> {
         let location = (x * self.order + y) * self.order;
         let result = &self.cube[location..location+self.order];
-        result.to_vec()
+        result.to_vec() // try without the to_vec()
     }
     
     // To_String method for the cube data structure
@@ -203,6 +203,15 @@ impl LatinSolver {
          
     }
 
+    fn check_solved(&self) -> bool {
+        for &elem in &self.grid {
+            if elem == 0 {
+                return false;
+            }
+        }
+        true
+    }
+
     
     fn recursive_solve(&mut self) -> bool {
         if let Some((x, y, available_digits)) = self.find_unsolved_position() {
@@ -223,22 +232,15 @@ impl LatinSolver {
         // check if this means we're solved or not
         } else {
             // todo maybe revisit and fix
-            let mut count = 0;
-            for &elem in self.cube.iter() {
-                //println!("count {}", elem);
-
-                if elem {
-                    count += 1;
-                }
-            }
-            return count == self.order.pow(2);
+            return self.check_solved();
         } 
     }
 }
 
 fn main() {
+    use std::time::Instant;
     //env::set_var("RUST_BACKTRACE", "1");
-    let mut ls = LatinSolver::new(4);
+    let mut ls = LatinSolver::new(9);
     println!("{}", ls.cube.len());
     println!("{}", ls.get_cube_pos(3, 3, 4));
     println!("{}", ls.get_cube_value(3, 3, 2));
@@ -253,8 +255,12 @@ fn main() {
     println!("{}", ls.get_cube_value(3, 3, 2));
     println!("{}", ls.get_cube_value(3, 3, 3));
 
+    let now = Instant::now();
+
     println!("solve success? {}", ls.recursive_solve());
 
+    let elapsed = now.elapsed();
+    println!("Elapsed: {:.2?}", elapsed);
 
     println!("{}", ls.cube_to_string());
     println!("{}", ls.grid_to_string())
