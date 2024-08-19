@@ -223,27 +223,38 @@ impl LatinSolver {
         true
     }
 
-    // Solve by recursively guessing, then backtracing up the tree
-    fn recursive_solve(&mut self) -> bool {
+    // Solve by recursively guessing, then backtracking up the tree
+    fn recursive_solve(&mut self, count: &mut u64, deep: bool) -> u64 {
         if let Some((x, y, available_digits)) = self.find_unsolved_location() {
             for n in available_digits {
-                let (prev_grid, prev_cube) = self.place_digit(x, y, n);
-                if self.recursive_solve() {
-                    return true;
-                } else {
-                    // revert to prior cube and grid
-                    self.cube = prev_cube;
-                    self.grid = prev_grid;
-                    //self.reset_grid_value(x, y);
+          
+                // Don't loop if we already finished and don't want to search exhaustively
+                if !deep && *count > 0 {
+                    break; 
                 }
+
+                // Solve and then restore data structures from before said solve
+                let (prev_grid, prev_cube) = self.place_digit(x, y, n);
+                self.recursive_solve(count, deep);
+                self.cube = prev_cube;
+                self.grid = prev_grid;
             }
-            return false;
+            return *count;
 
         // else no avaiable digits were found
         // check if this means we're solved or not
         } else {
             // todo maybe revisit and fix
-            return self.check_solved();
+            if self.check_solved() {
+                *count += 1;
+
+                // Print the first solved puzzle
+                if *count == 1 {
+                    println!("{}", self.cube_to_string());
+                    println!("{}", self.grid_to_string());
+                }
+            }
+            return *count;
         } 
     }
 }
@@ -252,27 +263,29 @@ fn main() {
     use std::time::Instant;
     //env::set_var("RUST_BACKTRACE", "1");
     let mut ls = LatinSolver::new(9);
-    println!("{}", ls.cube.len());
-    println!("{}", ls.get_cube_loc(3, 3, 4));
-    println!("{}", ls.get_cube_value(3, 3, 2));
-    println!("{}", ls.get_grid_value(3, 3));
+    // println!("{}", ls.cube.len());
+    // println!("{}", ls.get_cube_loc(3, 3, 4));
+    // println!("{}", ls.get_cube_value(3, 3, 2));
+    // println!("{}", ls.get_grid_value(3, 3));
 
 
-    ls.place_digit(3, 3, 3);
-    ls.place_digit(1, 3, 2);
-    ls.place_digit(0, 0, 2);
+    //ls.place_digit(3, 3, 3);
+    //ls.place_digit(1, 3, 2);
+    //ls.place_digit(0, 0, 2);
 
 
-    println!("{}", ls.get_cube_value(3, 3, 2));
-    println!("{}", ls.get_cube_value(3, 3, 3));
+    // println!("{}", ls.get_cube_value(3, 3, 2));
+    // println!("{}", ls.get_cube_value(3, 3, 3));
+
+    println!("{}", ls.cube_to_string());
+    println!("{}", ls.grid_to_string());
 
     let now = Instant::now();
 
-    println!("solve success? {}", ls.recursive_solve());
+    let mut count: u64 = 0;
+    println!("solve success? {}", ls.recursive_solve(&mut count, false));
+    println!("count {}", count);
 
     let elapsed = now.elapsed();
     println!("Elapsed: {:.2?}", elapsed);
-
-    println!("{}", ls.cube_to_string());
-    println!("{}", ls.grid_to_string())
 }
