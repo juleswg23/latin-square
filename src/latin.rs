@@ -5,30 +5,29 @@ use itertools::Itertools;
 use std::cmp::Ordering;
 /// An object that contains solving data for Latin Square puzzles
 pub struct LatinSolver {
-    order: usize,       // the dimension of the square KenKen grid
-    cube: Vec<bool>,    // order^3
+    order: usize,     // the dimension of the square KenKen grid
+    cube: Vec<bool>,  // order^3
 
     // might be useful to have grid appear elsewhere as its own type
-    grid: Vec<usize>,   // order^2
+    grid: Vec<usize>, // order^2
 
-    // Currently unused
-    //row: Vec<bool>,     // order^2
-    //col: Vec<bool>,     // order^2
+                      // Currently unused
+                      //row: Vec<bool>,     // order^2
+                      //col: Vec<bool>,     // order^2
 }
 
 impl LatinSolver {
-
     /**************************** Initializers ****************************/
 
     pub fn new(order: usize) -> LatinSolver {
         LatinSolver {
             order,
             cube: vec![true; order.pow(3)], // false when value is not a possibility in that square
-            grid: vec![0; order.pow(2)],    // The completed grid of values 1 through order, 0s before solved
-            
-            // Currently unused
-            //row: vec![false; order.pow(2)], // false when the val is not yet present in row x
-            //col: vec![false; order.pow(2)], // false when the val is not yet present in col y
+            grid: vec![0; order.pow(2)], // The completed grid of values 1 through order, 0s before solved
+
+                                         // Currently unused
+                                         //row: vec![false; order.pow(2)], // false when the val is not yet present in row x
+                                         //col: vec![false; order.pow(2)], // false when the val is not yet present in col y
         }
     }
 
@@ -52,12 +51,12 @@ impl LatinSolver {
         self.cube[location] = b;
     }
 
-    fn get_cube_loc_subarray(&self, x: usize, y:usize) -> Vec<bool> {
+    fn get_cube_loc_subarray(&self, x: usize, y: usize) -> Vec<bool> {
         let location = (x * self.order + y) * self.order;
-        let result = &self.cube[location..location+self.order];
+        let result = &self.cube[location..location + self.order];
         result.to_vec() // try without the to_vec()
     }
-    
+
     // To_String method for the cube data structure
     pub fn cube_to_string(&self) -> String {
         let mut result = String::from("");
@@ -66,7 +65,6 @@ impl LatinSolver {
             // Make an array of all the contents of each cell in the row
             let mut row_arr: Vec<String> = Vec::new();
             for j in 0..self.order {
-
                 // Make an array for the contents of each cell
                 // It will have a digit if the digit is still available, otherwise a '*'
                 let mut cell_arr: Vec<char> = Vec::new();
@@ -107,7 +105,10 @@ impl LatinSolver {
     // Set the final value in the grid of where the digit belongs
     fn set_grid_value(&mut self, x: usize, y: usize, n: usize) -> () {
         // First assert attempt
-        assert!(x < self.order && y < self.order && n <= self.order, "All quantities must be within the grid dimensions");
+        assert!(
+            x < self.order && y < self.order && n <= self.order,
+            "All quantities must be within the grid dimensions"
+        );
 
         let location = self.get_grid_loc(x, y);
         self.grid[location] = n;
@@ -143,8 +144,8 @@ impl LatinSolver {
 
     // Place a digit in the final grid,
     // and update the data structures storing the availability of digits
-    fn place_digit(&mut self, x: usize, y:usize, n: usize) -> (Vec<usize>, Vec<bool>) {
-        let old_data:(Vec<usize>, Vec<bool>) = (self.grid.clone(), self.cube.clone());
+    fn place_digit(&mut self, x: usize, y: usize, n: usize) -> (Vec<usize>, Vec<bool>) {
+        let old_data: (Vec<usize>, Vec<bool>) = (self.grid.clone(), self.cube.clone());
 
         // place it in the grid structure
         self.set_grid_value(x, y, n);
@@ -162,10 +163,10 @@ impl LatinSolver {
                 self.set_cube_value(x, i, n, false)
             }
         }
-        
+
         // update all other n's at that location
         for i in 1..=self.order {
-            if i != n { 
+            if i != n {
                 self.set_cube_value(x, y, i, false);
             }
         }
@@ -173,7 +174,6 @@ impl LatinSolver {
         //todo update rows and cols data structures
 
         old_data
-
     }
 
     // Returns the location and vector of available digits at that location from the cube structure
@@ -191,7 +191,7 @@ impl LatinSolver {
 
                 for n in 0..self.order {
                     if cube_subarray[n] {
-                        available_digits.push(n+1);
+                        available_digits.push(n + 1);
                     }
                 }
 
@@ -213,7 +213,6 @@ impl LatinSolver {
         }
         // Should only happen when whole puzzle is solved.
         None
-        
     }
 
     // Returns true iff puzzle is solved.
@@ -230,10 +229,9 @@ impl LatinSolver {
     fn recursive_solve(&mut self, count: &mut u64, deep: bool) -> u64 {
         if let Some((x, y, available_digits)) = self.find_unsolved_location() {
             for n in available_digits {
-        
                 // Don't loop if we already finished and don't want to search exhaustively
                 if !deep && *count > 0 {
-                    break; 
+                    break;
                 }
 
                 // Solve and then restore data structures from before said solve
@@ -258,7 +256,7 @@ impl LatinSolver {
                 }
             }
             *count
-        } 
+        }
     }
 
     pub fn solve(&mut self, deep: bool) -> u64 {

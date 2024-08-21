@@ -81,19 +81,23 @@ fn read_ken_ken(input: String) -> KenKen {
         if !matches!(op, Operation::Unknown | Operation::Given) {
             chars.next();
         }
-        let mut cells:Vec<u32> = vec![];
+        let mut cells: Vec<u32> = vec![];
         loop {
             // or use unwrap?
             let row: u32 = chars.next().unwrap().to_digit(10).expect("Not a row digit");
-            let col:u32 = chars.next().expect("No more characters").to_digit(10).expect("Not a row digit");
-            cells.push(row*order as u32 + col);
+            let col: u32 = chars
+                .next()
+                .expect("No more characters")
+                .to_digit(10)
+                .expect("Not a row digit");
+            cells.push(row * order as u32 + col);
             match chars.next() {
                 Some(':') => break,
                 Some(' ') => (),
                 _ => panic!("Not a valid operation character"),
             };
         }
-        ken_ken.regions.push((Clue{op, target}, cells));
+        ken_ken.regions.push((Clue { op, target }, cells));
         chars.next();
     }
     ken_ken
@@ -104,4 +108,3 @@ pub fn main() {
     println!("regions: {:?}, ", k.regions);
     // println!("no debug: {}", k.regions);
 }
-
