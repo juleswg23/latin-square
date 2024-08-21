@@ -8,7 +8,7 @@ pub struct LatinSolver {
     order: usize,       // the dimension of the square KenKen grid
     cube: Vec<bool>,    // order^3
 
-    // might be useful to have grid appear elsewhere as it's own type
+    // might be useful to have grid appear elsewhere as its own type
     grid: Vec<usize>,   // order^2
 
     // Currently unused
@@ -22,9 +22,9 @@ impl LatinSolver {
 
     pub fn new(order: usize) -> LatinSolver {
         LatinSolver {
-            order: order,
+            order,
             cube: vec![true; order.pow(3)], // false when value is not a possibility in that square
-            grid: vec![0; order.pow(2)],    // The completed grid of values 1..order, 0s before solved
+            grid: vec![0; order.pow(2)],    // The completed grid of values 1 through order, 0s before solved
             
             // Currently unused
             //row: vec![false; order.pow(2)], // false when the val is not yet present in row x
@@ -128,8 +128,8 @@ impl LatinSolver {
                 arr.push(self.get_grid_value(i, j));
             }
 
-            let row = " ".to_string() + &arr.iter().join(" | ") + &" ";
-            let gap = if i < self.order - 1 {
+            let row: String = " ".to_string() + &arr.iter().join(" | ") + &" ";
+            let gap: String = if i < self.order - 1 {
                 "\n".to_string() + &"_".repeat((self.order) * 4 - 1) + "\n"
             } else {
                 "\n".to_string()
@@ -142,9 +142,9 @@ impl LatinSolver {
     /************************** Solving functions **************************/
 
     // Place a digit in the final grid,
-    // and update the data strutures storing the availibility of digits
+    // and update the data structures storing the availability of digits
     fn place_digit(&mut self, x: usize, y:usize, n: usize) -> (Vec<usize>, Vec<bool>) {
-        let old_data = (self.grid.clone(), self.cube.clone());
+        let old_data:(Vec<usize>, Vec<bool>) = (self.grid.clone(), self.cube.clone());
 
         // place it in the grid structure
         self.set_grid_value(x, y, n);
@@ -172,7 +172,7 @@ impl LatinSolver {
 
         //todo update rows and cols data structures
 
-        return old_data;
+        old_data
 
     }
 
@@ -186,7 +186,7 @@ impl LatinSolver {
                 // Our subarray of the cube array at location i,j
                 let cube_subarray: Vec<bool> = self.get_cube_loc_subarray(i, j);
 
-                // Digits from 1..=order that are available at that location
+                // Digits from 1 through order that are available at that location
                 let mut available_digits: Vec<usize> = Vec::new();
 
                 for n in 0..self.order {
@@ -199,7 +199,7 @@ impl LatinSolver {
                 if available_digits.len() > 1 {
                     return Some((i, j, available_digits));
 
-                // othereise make sure all data structures updated
+                // otherwise make sure all data structures updated
                 } else if available_digits.len() == 1 {
                     if self.get_grid_value(i, j) == 0 {
                         // This might cause problems of version/clone
@@ -212,7 +212,7 @@ impl LatinSolver {
             }
         }
         // Should only happen when whole puzzle is solved.
-        return None;
+        None
         
     }
 
@@ -242,9 +242,9 @@ impl LatinSolver {
                 self.cube = prev_cube;
                 self.grid = prev_grid;
             }
-            return *count;
+            *count
 
-        // else no avaiable digits were found
+        // else no available digits were found
         // check if this means we're solved or not
         } else {
             // todo maybe revisit and fix
@@ -257,7 +257,7 @@ impl LatinSolver {
                     println!("{}", self.grid_to_string());
                 }
             }
-            return *count;
+            *count
         } 
     }
 

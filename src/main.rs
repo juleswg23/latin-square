@@ -1,8 +1,12 @@
 use std::env;
 mod latin;
 use latin::LatinSolver;
+mod kenken;
 
 fn main() {
+    kenken::main();
+
+    return;
     use std::time::Instant;
     env::set_var("RUST_BACKTRACE", "1");
     let mut ls = LatinSolver::new(6);
