@@ -1,7 +1,11 @@
+#![allow(unreachable_code)]
+#![allow(unused_mut)]
+
 use std::env;
 mod latin;
 use latin::LatinSolver;
 mod kenken;
+
 
 fn main() {
     kenken::main();
