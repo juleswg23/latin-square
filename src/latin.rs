@@ -51,10 +51,16 @@ impl LatinSolver {
         self.cube[location] = b;
     }
 
-    fn get_cube_loc_subarray(&self, x: usize, y: usize) -> Vec<bool> {
+    pub fn get_cube_loc_subarray(&self, x: usize, y: usize, ) -> Vec<bool> {
         let location = (x * self.order + y) * self.order;
         let result = &self.cube[location..location + self.order];
         result.to_vec() // try without the to_vec()
+    }
+
+    pub fn set_cube_loc_subarray(&mut self, x: usize, y: usize, subarray: Vec<bool>) -> () {
+        assert_eq!(self.order, subarray.len());
+        let location = (x * self.order + y) * self.order;
+        self.cube.splice(location..location + self.order, subarray);
     }
 
     // To_String method for the cube data structure
