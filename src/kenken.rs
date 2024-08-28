@@ -21,6 +21,10 @@ struct Clue {
 }
 
 pub mod math {
+
+    pub fn xy_pair(index: usize, order:usize) -> (usize, usize) {
+        (index / order, index % order)
+    }
     pub fn x_value(index: usize, order: usize) -> usize {
         index / order
     }
@@ -95,9 +99,10 @@ struct KenKenSolver {
 }
 
 impl KenKenSolver {
-    fn new(order: usize) -> KenKenSolver {
+    fn new(ken_ken: KenKen) -> KenKenSolver {
+        let order = ken_ken.order();
         KenKenSolver {
-            ken_ken: KenKen::new(order),
+            ken_ken,
             latin_solver: LatinSolver::new(order),
         }
     }
@@ -110,8 +115,7 @@ impl KenKenSolver {
         let operation = &region.clue().op;
         match operation {
             Operation::Given => {
-                let x = math::x_value(region.cells()[0], self.ken_ken.order());
-                let y = math::y_value(region.cells()[0], self.ken_ken.order());
+                let (x, y) = math::xy_pair(region.cells()[0], self.ken_ken.order());
                 self.latin_solver.place_digit(x, y, region.clue().target);
                 true
             },
@@ -120,9 +124,28 @@ impl KenKenSolver {
                 true
             },
             Operation::Subtract => {
-                for cell in region.cells() {
-                    self.latin_solver.
+                let mut available_masks: Vec<usize> = vec![0; region.cells().len()];
+                for i in 0..region.cells().len() {
+                    let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken.order());
+                    let subarray = self.latin_solver.get_cube_loc_subarray(x, y);
+                    let mut val = 0b0;
+
+                    for (index, available) in subarray.iter().enumerate() {
+                        val |= (*available as usize) << index; // maybe use .copy() or .clone() on available instead of deref
+                    }
+                    available_masks[i] = val;
+
                 }
+
+                let mask_a = available_masks[0];
+                let mask_b = available_masks[1];
+                let mask_a_greater = mask_a & mask_b << region.clue().target;
+                let mask_b_greater = mask_a & mask_b >> region.clue().target;
+
+                let updated_mask_a = mask_a_greater | mask_b_greater;
+                let updated_mask_b = (mask_a_greater >> region.clue().target) | (mask_b_greater << region.clue().target);
+
+                // TODO call self.latin_solver.set_cube_loc_subarray
                 true
             },
             Operation::Multiply => {
@@ -195,7 +218,7 @@ fn read_ken_ken(input: String) -> KenKen {
 pub fn main() {
     let k = read_ken_ken("3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
     println!("regions: {:?}, ", k.regions);
-    let mut k_solver: KenKenSolver = KenKenSolver::new(k.order());
+    let mut k_solver: KenKenSolver = KenKenSolver::new(k);
     k_solver.apply_constraint(1);
-    // println!("no debug: {}", k.regions);
+    println!("no debug: {}", k_solver.ken_ken.order());
 }
