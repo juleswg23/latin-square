@@ -17,25 +17,75 @@ enum Operation {
 #[derive(Debug)]
 struct Clue {
     op: Operation,
-    target: u32,
+    target: usize,
+}
+
+pub mod math {
+    pub fn x_value(index: usize, order: usize) -> usize {
+        index / order
+    }
+
+    pub fn y_value(index: usize, order: usize) -> usize {
+        index % order
+    }
+}
+
+#[derive(Debug)]
+struct Region {
+    clue: Clue,
+    cells: Vec<usize>,
+}
+
+impl Region {
+    pub fn new(clue: Clue, cells: Vec<usize>) -> Self {
+        Self { clue, cells, }
+    }
+
+    pub fn set_clue(&mut self, clue: Clue) {
+        self.clue = clue;
+    }
+
+    pub fn add_cell(&mut self, cell: usize) {
+        self.cells.push(cell);
+    }
+
+    pub fn remove_cell(&mut self, cell: usize) {
+        self.cells.retain(|&c| c != cell);
+    }
+
+    pub fn clue(&self) -> &Clue {
+        &self.clue
+    }
+
+    pub fn cells(&self) -> &Vec<usize> {
+        &self.cells
+    }
 }
 
 // A KenKen struct has the dimension of the KenKen and a list of the regions
 struct KenKen {
     order: usize,
-    regions: Vec<(Clue, Vec<u32>)>,
+    regions: Vec<Region>,
 }
 
 impl KenKen {
     // Constructor takes the order as a param and initializes regions with no data
-    fn new(order: usize) -> KenKen {
-        KenKen {
+    fn new(order: usize) -> Self {
+        Self {
             order,
             regions: vec![], // TODO make this more complete
         }
     }
 
     // TODO maybe try making a to_string()
+
+    pub fn order(&self) -> usize {
+        self.order
+    }
+
+    pub fn regions(&self) -> &Vec<Region> {
+        &self.regions
+    }
 }
 
 // Extends LatinSolver in the sense that it solves specific KenKens by leaning on LatinSolver methods
@@ -51,16 +101,50 @@ impl KenKenSolver {
             latin_solver: LatinSolver::new(order),
         }
     }
+
+    // Returns true if the ken_ken_solver made any mutations.
+    fn apply_constraint(&mut self, region_index: usize) -> bool {
+        // find region associated with index
+        // TODO unwrap value
+        let region = &self.ken_ken.regions()[region_index];
+        let operation = &region.clue().op;
+        match operation {
+            Operation::Given => {
+                let x = math::x_value(region.cells()[0], self.ken_ken.order());
+                let y = math::y_value(region.cells()[0], self.ken_ken.order());
+                self.latin_solver.place_digit(x, y, region.clue().target);
+                true
+            },
+            Operation::Add => {
+
+                true
+            },
+            Operation::Subtract => {
+                for cell in region.cells() {
+                    self.latin_solver.
+                }
+                true
+            },
+            Operation::Multiply => {
+                true
+            },
+            Operation::Divide => {
+                true
+            },
+            _ => {false},
+        }
+
+    }
 }
 
-// Takes a string input of a KenKen, and converts it to a KenKen object
-// Example format looks like 3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:
-
-// Takes a string input of a KenKen, and converts it to a KenKen object
-// Example format looks like "3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:"
-
-// TODO remove panics
 fn read_ken_ken(input: String) -> KenKen {
+    // Takes a string input of a KenKen, and converts it to a KenKen object
+    // Example format looks like 3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:
+
+    // Takes a string input of a KenKen, and converts it to a KenKen object
+    // Example format looks like "3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:"
+
+    // TODO remove panics
     let order: usize = input[0..=0].to_string().parse().expect("Not a number");
 
     let mut ken_ken = KenKen::new(order);
@@ -68,7 +152,7 @@ fn read_ken_ken(input: String) -> KenKen {
     let mut chars = input[3..].chars();
 
     while let Some(c) = chars.next() {
-        let target = c.to_digit(10).expect("Not a digit");
+        let target:usize = c.to_digit(10).expect("Not a digit") as usize;
         let op: Operation = match chars.next() {
             Some('+') => Operation::Add,
             Some('-') => Operation::Subtract,
@@ -81,23 +165,28 @@ fn read_ken_ken(input: String) -> KenKen {
         if !matches!(op, Operation::Unknown | Operation::Given) {
             chars.next();
         }
-        let mut cells: Vec<u32> = vec![];
+        let mut cells: Vec<usize> = vec![];
         loop {
             // or use unwrap?
-            let row: u32 = chars.next().unwrap().to_digit(10).expect("Not a row digit");
-            let col: u32 = chars
+            let row: usize = chars.
+                next().
+                expect("No more characters for row")
+                .to_digit(10).
+                expect("Not a row digit") as usize;
+            let col: usize = chars
                 .next()
                 .expect("No more characters")
                 .to_digit(10)
-                .expect("Not a row digit");
-            cells.push(row * order as u32 + col);
+                .expect("Not a row digit") as usize;
+            cells.push(row * order + col);
             match chars.next() {
                 Some(':') => break,
                 Some(' ') => (),
                 _ => panic!("Not a valid operation character"),
             };
         }
-        ken_ken.regions.push((Clue { op, target }, cells));
+
+        ken_ken.regions.push(Region::new(Clue { op, target }, cells));
         chars.next();
     }
     ken_ken
@@ -106,5 +195,7 @@ fn read_ken_ken(input: String) -> KenKen {
 pub fn main() {
     let k = read_ken_ken("3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
     println!("regions: {:?}, ", k.regions);
+    let mut k_solver: KenKenSolver = KenKenSolver::new(k.order());
+    k_solver.apply_constraint(1);
     // println!("no debug: {}", k.regions);
 }

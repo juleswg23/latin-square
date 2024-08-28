@@ -144,7 +144,7 @@ impl LatinSolver {
 
     // Place a digit in the final grid,
     // and update the data structures storing the availability of digits
-    fn place_digit(&mut self, x: usize, y: usize, n: usize) -> (Vec<usize>, Vec<bool>) {
+    pub fn place_digit(&mut self, x: usize, y: usize, n: usize) -> (Vec<usize>, Vec<bool>) {
         let old_data: (Vec<usize>, Vec<bool>) = (self.grid.clone(), self.cube.clone());
 
         // place it in the grid structure
