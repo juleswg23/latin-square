@@ -146,9 +146,11 @@ impl KenKenSolver {
                     // update with mask of 1s that are available from min
                     mask &= (0b1 << (min(math::min_bit(mask) + room_from_min, self.ken_ken.order()))) - 1;
                     // update with mask of 1s that are available from max
-                    println!("max_bit: {}, room_from_max: {}", max_bit, room_from_max);
+                    println!("max_bit: {}, room_from_max: {}", max_bit, room_from_max); // TODO fix
                     println!("before subtract {} ", 0b1 << max( max_bit - room_from_max, 0));
-                    mask &= -(0b1 << max( max_bit - room_from_max - 1, 0)); // This could be broken
+                    if max_bit > room_from_max {
+                        mask &= -(0b1 << max_bit - room_from_max - 1); // This could be broken
+                    }
                     self.latin_solver.set_cube_loc_available(x, y, mask);
                 }
                 // TODO choose when true and when false
