@@ -108,20 +108,16 @@ impl KenKenSolver {
         match operation {
             Operation::Given => {
                 let (x, y) = math::xy_pair(region.cells()[0], self.ken_ken.order());
-                self.latin_solver.place_digit(x, y, region.clue().target);
+                self.latin_solver.place_digit(x, y, region.clue().target); // TODO maybe different call here?
                 true
             },
             Operation::Add => {
+                let available_masks = self.available_masks(region);
 
                 true
             },
             Operation::Subtract => {
-                let mut available_masks: Vec<i32> = vec![0b0; region.cells().len()];
-                for i in 0..region.cells().len() {
-                    let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken.order());
-                    available_masks[i] = self.latin_solver.get_cube_loc_available(x, y);
-
-                }
+                let available_masks = self.available_masks(region);
 
                 let mask_a = available_masks[0];
                 let mask_b = available_masks[1];
@@ -148,6 +144,15 @@ impl KenKenSolver {
             _ => {false},
         }
 
+    }
+
+    fn available_masks(&mut self, region: &Region) -> Vec<i32> {
+        let mut available_masks: Vec<i32> = vec![0b0; region.cells().len()];
+        for i in 0..region.cells().len() {
+            let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken.order());
+            available_masks[i] = self.latin_solver.get_cube_loc_available(x, y);
+        }
+        available_masks
     }
 
     pub fn ken_ken(&self) -> &KenKen {
