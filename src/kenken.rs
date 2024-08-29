@@ -21,16 +21,8 @@ struct Clue {
 }
 
 pub mod math {
-
     pub fn xy_pair(index: usize, order:usize) -> (usize, usize) {
         (index / order, index % order)
-    }
-    pub fn x_value(index: usize, order: usize) -> usize {
-        index / order
-    }
-
-    pub fn y_value(index: usize, order: usize) -> usize {
-        index % order
     }
 }
 
