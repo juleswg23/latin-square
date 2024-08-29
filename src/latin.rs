@@ -6,14 +6,14 @@ use std::cmp::Ordering;
 /// An object that contains solving data for Latin Square puzzles
 pub struct LatinSolver {
     order: usize,     // the dimension of the square KenKen grid
-    cube: Vec<bool>,  // order^3 // TODO maybe refactor cube to be a 2d array of binary ints.
+    cube: Vec<i32>,   // order^3 // TODO maybe refactor cube to be a 2d array of binary ints.
 
     // might be useful to have grid appear elsewhere as its own type
     grid: Vec<usize>, // order^2
 
-                      // Currently unused
-                      //row: Vec<bool>,     // order^2
-                      //col: Vec<bool>,     // order^2
+  // Currently unused
+  //row: Vec<bool>,   // order^2
+  //col: Vec<bool>,   // order^2
 }
 
 impl LatinSolver {
@@ -22,46 +22,51 @@ impl LatinSolver {
     pub fn new(order: usize) -> LatinSolver {
         LatinSolver {
             order,
-            cube: vec![true; order.pow(3)], // false when value is not a possibility in that square
+            cube: vec![(0b1 << order) - 1; order.pow(2)], // 0 at bit k when k is not possible in that cell
             grid: vec![0; order.pow(2)], // The completed grid of values 1 through order, 0s before solved
 
-                                         // Currently unused
-                                         //row: vec![false; order.pow(2)], // false when the val is not yet present in row x
-                                         //col: vec![false; order.pow(2)], // false when the val is not yet present in col y
+             // Currently unused
+             //row: vec![false; order.pow(2)], // false when the val is not yet present in row x
+             //col: vec![false; order.pow(2)], // false when the val is not yet present in col y
         }
     }
 
     /**************************** Cube functions ****************************/
 
-    // Get the index in the cube vector of the boolean for value n at (x, y)
-    fn get_cube_loc(&self, x: usize, y: usize, n: usize) -> usize {
-        let location = (x * self.order + y) * self.order; // try removing &
-        location + n - 1
+    // Get the location at coordinates (x,y)
+    fn get_loc(&self, x: usize, y: usize) -> usize {
+        x * self.order + y
     }
 
     // True means the value (n) is still possible at that coordinate (x,y)
     fn get_cube_value(&self, x: usize, y: usize, n: usize) -> bool {
-        let location = self.get_cube_loc(x, y, n);
-        self.cube[location]
+        let location = self.get_loc(x, y);
+        (0b1 << (n-1)) & self.cube[location] != 0
     }
 
     // Update the cube data structure to be true or false at (x,y) to bool b
     fn set_cube_value(&mut self, x: usize, y: usize, n: usize, b: bool) -> () {
-        let location = self.get_cube_loc(x, y, n);
-        self.cube[location] = b;
+        let location = self.get_loc(x, y);
+        match b {
+            true => {
+                self.cube[location] |= 0b1 << (n-1);
+            },
+            false => {
+                let all_ones_mask = (0b1 << self.order) - 1;
+                self.cube[location] &= (0b1 << (n-1)) ^ all_ones_mask;
+            },
+        }
     }
 
-    pub fn get_cube_loc_subarray(&self, x: usize, y: usize, ) -> Vec<bool> {
-        let location = (x * self.order + y) * self.order;
-        let result = &self.cube[location..location + self.order];
-        result.to_vec() // try without the to_vec()
+    pub fn get_cube_loc_available(&self, x: usize, y: usize) -> i32 {
+        self.cube[self.get_loc(x, y)]
     }
 
     // Update a subarray at a particular position with pruned (or expanded) choices of available digits
-    pub fn set_cube_loc_subarray(&mut self, x: usize, y: usize, subarray: Vec<bool>) -> () {
-        assert_eq!(self.order, subarray.len());
-        let location = (x * self.order + y) * self.order;
-        self.cube.splice(location..location + self.order, subarray);
+    pub fn set_cube_loc_available(&mut self, x: usize, y: usize, available: i32) -> () {
+        assert!(available < 0b1 << self.order && available >= 0);
+        let location = self.get_loc(x, y);
+        self.cube[location] = available;
     }
 
     // To_String method for the cube data structure
@@ -99,14 +104,10 @@ impl LatinSolver {
 
     /**************************** Grid functions ****************************/
 
-    // Get the location in the grid data structure at coordinates (x,y)
-    fn get_grid_loc(&self, x: usize, y: usize) -> usize {
-        x * self.order + y
-    }
 
     // Get the value at the grid
     fn get_grid_value(&self, x: usize, y: usize) -> usize {
-        self.grid[self.get_grid_loc(x, y)]
+        self.grid[self.get_loc(x, y)]
     }
 
     // Set the final value in the grid of where the digit belongs
@@ -116,8 +117,7 @@ impl LatinSolver {
             x < self.order && y < self.order && n <= self.order,
             "All quantities must be within the grid dimensions"
         );
-
-        let location = self.get_grid_loc(x, y);
+        let location = self.get_loc(x, y);
         self.grid[location] = n;
     }
 
@@ -151,8 +151,8 @@ impl LatinSolver {
 
     // Place a digit in the final grid,
     // and update the data structures storing the availability of digits
-    pub fn place_digit(&mut self, x: usize, y: usize, n: usize) -> (Vec<usize>, Vec<bool>) {
-        let old_data: (Vec<usize>, Vec<bool>) = (self.grid.clone(), self.cube.clone());
+    pub fn place_digit(&mut self, x: usize, y: usize, n: usize) -> (Vec<usize>, Vec<i32>) {
+        let old_data: (Vec<usize>, Vec<i32>) = (self.grid.clone(), self.cube.clone());
 
         // place it in the grid structure
         self.set_grid_value(x, y, n);
@@ -190,15 +190,12 @@ impl LatinSolver {
     fn find_unsolved_location(&mut self) -> Option<(usize, usize, Vec<usize>)> {
         for i in 0..self.order {
             for j in 0..self.order {
-                // Our subarray of the cube array at location i,j
-                let cube_subarray: Vec<bool> = self.get_cube_loc_subarray(i, j);
-
                 // Digits from 1 through order that are available at that location
                 let mut available_digits: Vec<usize> = Vec::new();
 
-                for n in 0..self.order {
-                    if cube_subarray[n] {
-                        available_digits.push(n + 1);
+                for n in 1..=self.order {
+                    if self.get_cube_value(i, j, n)  {
+                        available_digits.push(n);
                     }
                 }
 

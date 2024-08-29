@@ -124,16 +124,10 @@ impl KenKenSolver {
                 true
             },
             Operation::Subtract => {
-                let mut available_masks: Vec<usize> = vec![0; region.cells().len()];
+                let mut available_masks: Vec<i32> = vec![0b0; region.cells().len()];
                 for i in 0..region.cells().len() {
                     let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken.order());
-                    let subarray = self.latin_solver.get_cube_loc_subarray(x, y);
-                    let mut val = 0b0;
-
-                    for (index, available) in subarray.iter().enumerate() {
-                        val |= (*available as usize) << index; // maybe use .copy() or .clone() on available instead of deref
-                    }
-                    available_masks[i] = val;
+                    available_masks[i] = self.latin_solver.get_cube_loc_available(x, y);
 
                 }
 
@@ -148,12 +142,7 @@ impl KenKenSolver {
 
                 for i in 0..region.cells().len() {
                     let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken.order());
-                    let mut subarray: Vec<bool> = vec![];
-                    // This whole loop is to convert back to a vector rather than the nice binary int
-                    for index in 0..self.ken_ken.order() {
-                        subarray.push((0b1 << index) & available_masks[i] != 0);
-                    }
-                    self.latin_solver.set_cube_loc_subarray(x, y, subarray);
+                    self.latin_solver.set_cube_loc_available(x, y, available_masks[i]);
                 }
                 // TODO choose when true and when false
                 true
