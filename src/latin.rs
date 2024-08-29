@@ -6,7 +6,7 @@ use std::cmp::Ordering;
 /// An object that contains solving data for Latin Square puzzles
 pub struct LatinSolver {
     order: usize,     // the dimension of the square KenKen grid
-    cube: Vec<bool>,  // order^3
+    cube: Vec<bool>,  // order^3 // TODO maybe refactor cube to be a 2d array of binary ints.
 
     // might be useful to have grid appear elsewhere as its own type
     grid: Vec<usize>, // order^2
@@ -57,6 +57,7 @@ impl LatinSolver {
         result.to_vec() // try without the to_vec()
     }
 
+    // Update a subarray at a particular position with pruned (or expanded) choices of available digits
     pub fn set_cube_loc_subarray(&mut self, x: usize, y: usize, subarray: Vec<bool>) -> () {
         assert_eq!(self.order, subarray.len());
         let location = (x * self.order + y) * self.order;

@@ -142,10 +142,20 @@ impl KenKenSolver {
                 let mask_a_greater = mask_a & mask_b << region.clue().target;
                 let mask_b_greater = mask_a & mask_b >> region.clue().target;
 
-                let updated_mask_a = mask_a_greater | mask_b_greater;
-                let updated_mask_b = (mask_a_greater >> region.clue().target) | (mask_b_greater << region.clue().target);
+                available_masks[0] = mask_a_greater | mask_b_greater;
+                available_masks[1] = (mask_a_greater >> region.clue().target) | (mask_b_greater << region.clue().target);
 
-                // TODO call self.latin_solver.set_cube_loc_subarray
+
+                for i in 0..region.cells().len() {
+                    let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken.order());
+                    let mut subarray: Vec<bool> = vec![];
+                    // This whole loop is to convert back to a vector rather than the nice binary int
+                    for index in 0..self.ken_ken.order() {
+                        subarray.push((0b1 << index) & available_masks[i] != 0);
+                    }
+                    self.latin_solver.set_cube_loc_subarray(x, y, subarray);
+                }
+                // TODO choose when true and when false
                 true
             },
             Operation::Multiply => {
@@ -220,5 +230,5 @@ pub fn main() {
     println!("regions: {:?}, ", k.regions);
     let mut k_solver: KenKenSolver = KenKenSolver::new(k);
     k_solver.apply_constraint(1);
-    println!("no debug: {}", k_solver.ken_ken.order());
+    println!("no debug:\n {}", k_solver.latin_solver.cube_to_string());
 }
