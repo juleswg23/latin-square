@@ -149,6 +149,14 @@ impl KenKenSolver {
         }
 
     }
+
+    pub fn ken_ken(&self) -> &KenKen {
+        &self.ken_ken
+    }
+
+    pub fn latin_solver(&self) -> &LatinSolver {
+        &self.latin_solver
+    }
 }
 
 fn read_ken_ken(input: String) -> KenKen {
@@ -206,10 +214,17 @@ fn read_ken_ken(input: String) -> KenKen {
     ken_ken
 }
 
-pub fn main() {
-    let k = read_ken_ken("3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
-    println!("regions: {:?}, ", k.regions);
-    let mut k_solver: KenKenSolver = KenKenSolver::new(k);
-    k_solver.apply_constraint(1);
-    println!("no debug:\n {}", k_solver.latin_solver.cube_to_string());
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test1() {
+        let k = read_ken_ken("3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+        println!("regions: {:?}, ", k.regions);
+        let mut k_solver: KenKenSolver = KenKenSolver::new(k);
+        k_solver.apply_constraint(1);
+        println!("no debug:\n {}", k_solver.latin_solver.cube_to_string());
+        assert_eq!(3, 2+1);
+    }
 }
