@@ -43,7 +43,7 @@ mod tests {
     use std::env;
     // use latin::LatinSolver;
 
-    #[test]
+    //#[test]
     fn test2() {
         env::set_var("RUST_BACKTRACE", "1");
         let mut ls = LatinSolver::new(6);

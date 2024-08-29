@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use crate::latin::LatinSolver;
+use core::cmp::{max, min};
 
 // The possible operations on a clue for a KenKen
 #[derive(Clone, Debug, strum_macros::Display)]
@@ -23,6 +24,20 @@ struct Clue {
 pub mod math {
     pub fn xy_pair(index: usize, order:usize) -> (usize, usize) {
         (index / order, index % order)
+    }
+
+    // Returns the location of the rightmost set bit
+    // Note that this is in digit notation, so 0b110 returns 2
+    pub fn min_bit(mask: i32) -> usize {
+        assert_ne!(mask, 0b0);
+        ((mask & -mask) as f32).log2() as usize + 1
+    }
+
+    // Returns the location of the leftmose set bit
+    // Note that this is in digit notation, so 0b110 returns 3
+    pub fn max_bit(mask: i32) -> usize {
+        assert_ne!(mask, 0b0);
+        (mask as f32 + 1.0).log2().ceil() as usize
     }
 }
 
@@ -112,12 +127,35 @@ impl KenKenSolver {
                 true
             },
             Operation::Add => {
+                // currently doesn't check all possibilities
                 let available_masks = self.available_masks(region);
+                let mut min_sum = 0;
+                let mut max_sum = 0;
+                for mask in &available_masks {
+                    min_sum += math::min_bit(*mask); // or mask.clone() instead??
+                    max_sum += math::max_bit(*mask);
+                }
+                let room_from_min = region.clue().target - min_sum;
+                let room_from_max = max_sum - region.clue().target;
 
+                // update the cube data structure with available masks
+                for i in 0..region.cells().len() {
+                    let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken.order());
+                    let mut mask: i32 = available_masks[i];
+                    let max_bit = math::max_bit(mask);
+                    // update with mask of 1s that are available from min
+                    mask &= (0b1 << (min(math::min_bit(mask) + room_from_min, self.ken_ken.order()))) - 1;
+                    // update with mask of 1s that are available from max
+                    println!("max_bit: {}, room_from_max: {}", max_bit, room_from_max);
+                    println!("before subtract {} ", 0b1 << max( max_bit - room_from_max, 0));
+                    mask &= -(0b1 << max( max_bit - room_from_max - 1, 0)); // This could be broken
+                    self.latin_solver.set_cube_loc_available(x, y, mask);
+                }
+                // TODO choose when true and when false
                 true
             },
             Operation::Subtract => {
-                let available_masks = self.available_masks(region);
+                let mut available_masks = self.available_masks(region);
 
                 let mask_a = available_masks[0];
                 let mask_b = available_masks[1];
@@ -146,7 +184,7 @@ impl KenKenSolver {
 
     }
 
-    fn available_masks(&mut self, region: &Region) -> Vec<i32> {
+    fn available_masks(&self, region: &Region) -> Vec<i32> {
         let mut available_masks: Vec<i32> = vec![0b0; region.cells().len()];
         for i in 0..region.cells().len() {
             let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken.order());
@@ -224,12 +262,47 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test1() {
+    fn test_subtraction() {
         let k = read_ken_ken("3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
-        println!("regions: {:?}, ", k.regions);
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
         k_solver.apply_constraint(1);
-        println!("no debug:\n {}", k_solver.latin_solver.cube_to_string());
-        assert_eq!(3, 2+1);
+        println!("{}", k_solver.latin_solver.cube_to_string());
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 2), 0b101);
+    }
+
+    #[test]
+    fn test_addition() {
+        let k = read_ken_ken("3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+        let mut k_solver: KenKenSolver = KenKenSolver::new(k);
+        k_solver.apply_constraint(0);
+        println!("{}", k_solver.latin_solver.cube_to_string());
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 1), 0b011);
+    }
+
+    #[test]
+    fn bit_tests() {
+        let number = 0b1;
+        assert_eq!(math::max_bit(number), 1);
+        assert_eq!(math::min_bit(number), 1);
+
+        let number = 0b10;
+        assert_eq!(math::max_bit(number), 2);
+        assert_eq!(math::min_bit(number), 2);
+
+        let number = 0b11;
+        assert_eq!(math::max_bit(number), 2);
+        assert_eq!(math::min_bit(number), 1);
+
+        let number = 0b1001;
+        assert_eq!(math::max_bit(number), 4);
+        assert_eq!(math::min_bit(number), 1);
+
+        let number = 0b00100100;
+        assert_eq!(math::max_bit(number), 6);
+        assert_eq!(math::min_bit(number), 3);
+
+        let number = 0b00101110100;
+        assert_eq!(math::max_bit(number), 9);
+        assert_eq!(math::min_bit(number), 3);
     }
 }
