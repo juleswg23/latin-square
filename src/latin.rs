@@ -33,6 +33,12 @@ impl LatinSolver {
 
     /**************************** Cube functions ****************************/
 
+    pub fn order(&self) -> usize {
+        self.order
+    }
+
+    /**************************** Cube functions ****************************/
+
     // Get the location at coordinates (x,y)
     fn get_loc(&self, x: usize, y: usize) -> usize {
         x * self.order + y
@@ -268,4 +274,5 @@ impl LatinSolver {
 
         self.recursive_solve(&mut count, deep)
     }
+
 }

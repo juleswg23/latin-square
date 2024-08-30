@@ -144,10 +144,7 @@ impl KenKenSolver {
 
                 // If either is true, set all possibilities to false.
                 if region.clue().target < min_sum || region.clue().target > max_sum {
-                    for i in 0..region.cells().len() {
-                        let (x,y) = math::xy_pair(region.cells()[i], self.ken_ken().order());
-                        self.latin_solver.set_cube_loc_available(x, y, 0b0);
-                    }
+                    Self::update_latin_solver(&mut self.latin_solver, region, vec![0b0; region.cells().len()]);
                     return true;
                 }
 
@@ -186,22 +183,11 @@ impl KenKenSolver {
                 available_masks[1] = (mask_a_greater >> region.clue().target) | (mask_b_greater << region.clue().target);
 
 
-                for i in 0..region.cells().len() {
-                    let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken().order());
-                    self.latin_solver.set_cube_loc_available(x, y, available_masks[i]);
-                }
+                Self::update_latin_solver(&mut self.latin_solver, region, available_masks);
                 // TODO choose when true and when false
                 true
             },
             Operation::Multiply => {
-                // this will be an integer with 1s everywhere except on bits that don't go into target
-                let mut not_divisible: i32 = 0b0;
-                for i in 1..=self.ken_ken().order() {
-                    if region.clue().target % i == 0 {
-                        not_divisible |= 0b1 << i - 1;
-                    }
-                }
-
                 // Takes a given digit from a cell, then compares product possibilities
                 // with the other masks. Returns a vector of masks with on bits for hits
                 fn multiply_helper(new_masks: &mut Vec<i32>, order: usize, target: usize, given: usize, other_masks: &Vec<i32>) -> bool {
@@ -244,19 +230,14 @@ impl KenKenSolver {
                 let mut updated_masks: Vec<i32> = vec![0b0; region.cells().len()];
                 multiply_helper(&mut updated_masks, self.ken_ken().order(), region.clue().target, 1, &available_masks);
 
-
-                for i in 0..region.cells().len() {
-                    let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken().order());
-                    self.latin_solver.set_cube_loc_available(x, y, updated_masks[i]);
-                }
-
+                Self::update_latin_solver(&mut self.latin_solver, region, updated_masks);
                 true
             },
             Operation::Divide => {
-                let mut available_masks = self.available_masks(region);
+                let mut updated_masks = self.available_masks(region);
 
-                let mask_a = available_masks[0];
-                let mask_b = available_masks[1];
+                let mask_a = updated_masks[0];
+                let mask_b = updated_masks[1];
                 let mut mask_a_updated = 0b0;
                 let mut mask_b_updated = 0b0;
                 let target = region.clue().target;
@@ -275,19 +256,25 @@ impl KenKenSolver {
                     divide_helper(mask_b, mask_a, &mut mask_b_updated, &mut mask_a_updated, target, i);
                 }
 
-                available_masks[0] = mask_a_updated;
-                available_masks[1] = mask_b_updated;
+                updated_masks[0] = mask_a_updated;
+                updated_masks[1] = mask_b_updated;
 
-                for i in 0..region.cells().len() {
-                    let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken().order());
-                    self.latin_solver.set_cube_loc_available(x, y, available_masks[i]);
-                }
+                Self::update_latin_solver(&mut self.latin_solver, region, updated_masks);
                 // TODO choose when true and when false
                 true
             },
             _ => {false},
         }
 
+    }
+
+    fn update_latin_solver(latin: &mut LatinSolver, region: &Region, mut new_masks: Vec<i32>) {
+        assert_eq!(region.cells().len(), new_masks.len());
+
+        for i in 0..region.cells().len() {
+            let (x, y) = math::xy_pair(region.cells()[i], latin.order());
+            latin.set_cube_loc_available(x, y, new_masks[i]);
+        }
     }
 
     fn available_masks(&self, region: &Region) -> Vec<i32> {
