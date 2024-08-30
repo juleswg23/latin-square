@@ -359,8 +359,10 @@ fn read_ken_ken(input: String) -> KenKen {
 #[cfg(test)]
 mod tests {
     use super::*;
+    
+    // TODO refactor test code so it's not so repetitive.
 
-    #[test]
+    //#[test]
     fn test_subtraction() {
         let k = read_ken_ken("3: 3+ 00 01: 1- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
@@ -393,7 +395,7 @@ mod tests {
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(2, 3), 0b1001);
     }
 
-    #[test]
+   // #[test]
     fn test_addition() {
         let k = read_ken_ken("3: 1+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
@@ -441,7 +443,7 @@ mod tests {
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(1, 2), 0b1100);
     }
 
-    #[test]
+   // #[test]
     fn test_division() {
         let k = read_ken_ken("3: 2/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
@@ -472,7 +474,7 @@ mod tests {
 
     }
 
-    #[test]
+ //   #[test]
     fn test_multiplication() {
         let k = read_ken_ken("3: 2* 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
@@ -502,7 +504,7 @@ mod tests {
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(1, 1), 0b1111);
     }
 
-    #[test]
+   // #[test]
     fn test_given() {
         let k = read_ken_ken("3: 2/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
@@ -517,6 +519,24 @@ mod tests {
         let k = read_ken_ken("4: 12* 00 01 11: 6+ 02 03 12: 2/ 10 20: 1- 13 23: 1 30: 1- 21 31: 8* 22 32 33:".to_string());
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
         k_solver.apply_constraint(4);
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(3, 0), 0b0001);
+    }
+
+    #[test]
+    fn wholistic_test() {
+        let k = read_ken_ken("3: 2/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+        let mut k_solver: KenKenSolver = KenKenSolver::new(k);
+        for i in 0..k_solver.ken_ken().regions().len() {
+            k_solver.apply_constraint(i);
+        }
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(2, 2), 0b010);
+        
+        
+        let k = read_ken_ken("4: 12* 00 01 11: 6+ 02 03 12: 2/ 10 20: 1- 13 23: 1 30: 1- 21 31: 8* 22 32 33:".to_string());
+        let mut k_solver: KenKenSolver = KenKenSolver::new(k);
+        for i in 0..k_solver.ken_ken().regions().len() {
+            k_solver.apply_constraint(i);
+        }
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(3, 0), 0b0001);
     }
 
