@@ -122,9 +122,15 @@ impl KenKenSolver {
         let operation = &region.clue().op;
         match operation {
             Operation::Given => {
+                let mut new_mask = 0b0;
+
+                if region.clue().target >= 1 && region.clue().target <= self.ken_ken().order() {
+                    new_mask = 0b1 << region.clue().target - 1;
+                }
+
                 let (x, y) = math::xy_pair(region.cells()[0], self.ken_ken().order());
-                self.latin_solver.place_digit(x, y, region.clue().target); // TODO maybe different call here?
-                true
+                self.latin_solver.set_cube_loc_available(x, y, new_mask);
+                new_mask != 0b0
             },
             Operation::Add => {
                 // currently doesn't check all possibilities
@@ -491,13 +497,16 @@ mod tests {
         let k = read_ken_ken("3: 2/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
         k_solver.apply_constraint(2);
-        //println!("{}", k_solver.latin_solver.cube_to_string());
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(2, 2), 0b010);
+
+        let k = read_ken_ken("3: 2/ 00 01: 2- 02 12: 5 22: 9+ 10 11 20 21:".to_string());
+        let mut k_solver: KenKenSolver = KenKenSolver::new(k);
+        k_solver.apply_constraint(2);
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(2, 2), 0b000);
 
         let k = read_ken_ken("4: 12* 00 01 11: 6+ 02 03 12: 2/ 10 20: 1- 13 23: 1 30: 1- 21 31: 8* 22 32 33:".to_string());
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
         k_solver.apply_constraint(4);
-        //println!("{}", k_solver.latin_solver.cube_to_string());
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(3, 0), 0b0001);
     }
 
