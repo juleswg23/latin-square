@@ -122,7 +122,7 @@ impl KenKenSolver {
         let operation = &region.clue().op;
         match operation {
             Operation::Given => {
-                let (x, y) = math::xy_pair(region.cells()[0], self.ken_ken.order());
+                let (x, y) = math::xy_pair(region.cells()[0], self.ken_ken().order());
                 self.latin_solver.place_digit(x, y, region.clue().target); // TODO maybe different call here?
                 true
             },
@@ -140,12 +140,12 @@ impl KenKenSolver {
 
                 // update the cube data structure with available masks
                 for i in 0..region.cells().len() {
-                    let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken.order());
+                    let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken().order());
                     let mut mask: i32 = available_masks[i];
                     let max_bit = math::max_bit(mask);
 
                     // update with mask of 1s that are available from min
-                    mask &= (0b1 << (min(math::min_bit(mask) + room_from_min, self.ken_ken.order()))) - 1;
+                    mask &= (0b1 << (min(math::min_bit(mask) + room_from_min, self.ken_ken().order()))) - 1;
 
                     // update with mask of 1s that are available from max
                     // This avoids subtractions problems being less than 0. If the condition is false,
@@ -171,13 +171,24 @@ impl KenKenSolver {
 
 
                 for i in 0..region.cells().len() {
-                    let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken.order());
+                    let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken().order());
                     self.latin_solver.set_cube_loc_available(x, y, available_masks[i]);
                 }
                 // TODO choose when true and when false
                 true
             },
             Operation::Multiply => {
+                // this will be an integer with 1s everywhere except on bits that don't go into target
+                let mut not_divisible: i32 = 0b0;
+                for i in 0..self.ken_ken().order() {
+                    
+                }
+                
+                let mut available_masks = self.available_masks(region);
+                
+                for i in 0..available_masks.len() {
+                    //available_masks[i] &= ()
+                }
                 true
             },
             Operation::Divide => {
@@ -198,7 +209,7 @@ impl KenKenSolver {
                 }
 
                 // Dividing by 2 because any larger value won't have pair
-                for i in 1..= self.ken_ken.order()/2 {
+                for i in 1..= self.ken_ken().order()/2 {
                     divide_helper(mask_a, mask_b, &mut mask_a_updated, &mut mask_b_updated, target, i);
                     divide_helper(mask_b, mask_a, &mut mask_b_updated, &mut mask_a_updated, target, i);
                 }
@@ -207,7 +218,7 @@ impl KenKenSolver {
                 available_masks[1] = mask_b_updated;
 
                 for i in 0..region.cells().len() {
-                    let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken.order());
+                    let (x, y) = math::xy_pair(region.cells()[i], self.ken_ken().order());
                     self.latin_solver.set_cube_loc_available(x, y, available_masks[i]);
                 }
                 // TODO choose when true and when false
