@@ -135,6 +135,16 @@ impl KenKenSolver {
                     min_sum += math::min_bit(*mask); // or mask.clone() instead??
                     max_sum += math::max_bit(*mask);
                 }
+
+                // If either is true, set all possibilities to false.
+                if region.clue().target < min_sum || region.clue().target > max_sum {
+                    for i in 0..region.cells().len() {
+                        let (x,y) = math::xy_pair(region.cells()[i], self.ken_ken().order());
+                        self.latin_solver.set_cube_loc_available(x, y, 0b0);
+                    }
+                    return true;
+                }
+
                 let room_from_min = region.clue().target - min_sum;
                 let room_from_max = max_sum - region.clue().target;
 
@@ -186,8 +196,6 @@ impl KenKenSolver {
                     }
                 }
 
-                let mut available_masks = self.available_masks(region);
-
                 // Takes a given digit from a cell, then compares product possibilities
                 // with the other masks. Returns a vector of masks with on bits for hits
                 fn multiply_helper(new_masks: &mut Vec<i32>, order: usize, target: usize, given: usize, other_masks: &Vec<i32>) -> bool {
@@ -195,7 +203,7 @@ impl KenKenSolver {
                         panic!("should never have 0 len");
                     }
 
-                    // base case there is only one other mask to chekc
+                    // base case there is only one other mask to check
                     if other_masks.len() == 1 {
                         if target % given == 0 {
                             if (0b1 << ((target / given) - 1)) & other_masks[0] != 0 {
@@ -221,16 +229,14 @@ impl KenKenSolver {
 
                         }
                     }
-                    println!("pos, {:?}", len- other_masks.len());
 
                     new_masks[len - other_masks.len()] = new_mask;
-                    println!("new_masks, {:?}", new_masks);
                     return new_mask != 0b0;
                 }
 
+                let mut available_masks = self.available_masks(region);
                 let mut updated_masks: Vec<i32> = vec![0b0; region.cells().len()];
                 multiply_helper(&mut updated_masks, self.ken_ken().order(), region.clue().target, 1, &available_masks);
-                println!("updated, {:?}", updated_masks);
 
 
                 for i in 0..region.cells().len() {
@@ -368,20 +374,20 @@ mod tests {
         k_solver.apply_constraint(1);
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 2), 0b111);
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(1, 2), 0b111);
-        
+
         let k = read_ken_ken("3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
         k_solver.apply_constraint(1);
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 2), 0b101);
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(1, 2), 0b101);
-        
+
         let k = read_ken_ken("3: 3+ 00 01: 3- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
         k_solver.apply_constraint(1);
         //println!("{}", k_solver.latin_solver.cube_to_string());
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 2), 0b000);
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(1, 2), 0b000);
-        
+
         let k = read_ken_ken("4: 12* 00 01 11: 6+ 02 03 12: 2/ 10 20: 1- 13 23: 1 30: 1- 21 31: 8* 22 32 33:".to_string());
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
         k_solver.apply_constraint(3);
@@ -391,11 +397,29 @@ mod tests {
 
     #[test]
     fn test_addition() {
+        let k = read_ken_ken("3: 1+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+        let mut k_solver: KenKenSolver = KenKenSolver::new(k);
+        k_solver.apply_constraint(0);
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 0), 0b000);
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 1), 0b000);
+
         let k = read_ken_ken("3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
         k_solver.apply_constraint(0);
-        //println!("{}", k_solver.latin_solver.cube_to_string());
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 0), 0b011);
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 1), 0b011);
+
+        let k = read_ken_ken("3: 5+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+        let mut k_solver: KenKenSolver = KenKenSolver::new(k);
+        k_solver.apply_constraint(0);
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 0), 0b110);
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 1), 0b110);
+
+        let k = read_ken_ken("3: 7+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+        let mut k_solver: KenKenSolver = KenKenSolver::new(k);
+        k_solver.apply_constraint(0);
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 0), 0b000);
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 1), 0b000);
 
         let k = read_ken_ken("4: 12* 00 01 11: 6+ 02 03 12: 2/ 10 20: 1- 13 23: 1 30: 1- 21 31: 8* 22 32 33:".to_string());
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
