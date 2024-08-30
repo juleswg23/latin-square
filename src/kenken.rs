@@ -250,13 +250,14 @@ fn read_ken_ken(input: String) -> KenKen {
 
     let mut chars = input[3..].chars();
 
-    while let Some(c) = chars.next() {
+    while let Some(character) = chars.next() {
         let mut target_builder: String = String::new();
+        let mut c = character;
         while c.is_digit(10) {
             target_builder.push(c);
             c = chars.next().unwrap();
         }
-        let target: usize = target_builder.parse().expect("Not a digit") as usize;
+        let target: usize = target_builder.parse::<i32>().expect("Not a digit") as usize;
         let op: Operation = match c {
             '+' => Operation::Add,
             '-' => Operation::Subtract,
@@ -272,11 +273,11 @@ fn read_ken_ken(input: String) -> KenKen {
         let mut cells: Vec<usize> = vec![];
         loop {
             // or use unwrap?
-            let row: usize = chars.
-                next().
-                expect("No more characters for row")
-                .to_digit(10).
-                expect("Not a row digit") as usize;
+            let row: usize = chars
+                .next()
+                .expect("No more characters for row")
+                .to_digit(10)
+                .expect("Not a row digit") as usize;
             let col: usize = chars
                 .next()
                 .expect("No more characters")
@@ -308,11 +309,11 @@ mod tests {
         //println!("{}", k_solver.latin_solver.cube_to_string());
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 2), 0b101);
 
-        let k = read_ken_ken("4: 12x 00 01 11: 6+ 02 03 12: 2/ 10 20: 1- 13 23: 1 30: 1- 21 31: 8x 22 32 33:".to_string());
+        let k = read_ken_ken("4: 12* 00 01 11: 6+ 02 03 12: 2/ 10 20: 1- 13 23: 1 30: 1- 21 31: 8* 22 32 33:".to_string());
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
-        k_solver.apply_constraint(1);
+        k_solver.apply_constraint(3);
         //println!("{}", k_solver.latin_solver.cube_to_string());
-        assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 2), 0b101);
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(1, 3), 0b1111);
     }
 
     #[test]
@@ -322,6 +323,12 @@ mod tests {
         k_solver.apply_constraint(0);
         //println!("{}", k_solver.latin_solver.cube_to_string());
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 1), 0b011);
+
+        let k = read_ken_ken("4: 12* 00 01 11: 6+ 02 03 12: 2/ 10 20: 1- 13 23: 1 30: 1- 21 31: 8* 22 32 33:".to_string());
+        let mut k_solver: KenKenSolver = KenKenSolver::new(k);
+        k_solver.apply_constraint(1);
+        //println!("{}", k_solver.latin_solver.cube_to_string());
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 2), 0b1111);
     }
 
     #[test]
@@ -343,6 +350,27 @@ mod tests {
         k_solver.apply_constraint(0);
         //println!("{}", k_solver.latin_solver.cube_to_string());
         assert_eq!(k_solver.latin_solver.get_cube_loc_available(0, 1), 0b000);
+
+        let k = read_ken_ken("4: 12* 00 01 11: 6+ 02 03 12: 2/ 10 20: 1- 13 23: 1 30: 1- 21 31: 8* 22 32 33:".to_string());
+        let mut k_solver: KenKenSolver = KenKenSolver::new(k);
+        k_solver.apply_constraint(2);
+        //println!("{}", k_solver.latin_solver.cube_to_string());
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(1, 0), 0b1011);
+    }
+
+    #[test]
+    fn test_given() {
+        let k = read_ken_ken("3: 2/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+        let mut k_solver: KenKenSolver = KenKenSolver::new(k);
+        k_solver.apply_constraint(2);
+        //println!("{}", k_solver.latin_solver.cube_to_string());
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(2, 2), 0b010);
+
+        let k = read_ken_ken("4: 12* 00 01 11: 6+ 02 03 12: 2/ 10 20: 1- 13 23: 1 30: 1- 21 31: 8* 22 32 33:".to_string());
+        let mut k_solver: KenKenSolver = KenKenSolver::new(k);
+        k_solver.apply_constraint(4);
+        //println!("{}", k_solver.latin_solver.cube_to_string());
+        assert_eq!(k_solver.latin_solver.get_cube_loc_available(3, 0), 0b0001);
     }
 
     #[test]
