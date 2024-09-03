@@ -430,7 +430,6 @@ mod tests {
     use super::*;
 
     // TODO refactor test code so it's not so repetitive.
-    
 
     #[test]
     fn test_subtraction() {
@@ -612,7 +611,7 @@ mod tests {
     }
 
     #[test]
-    fn wholistic_test() {
+    fn holistic_test() {
         let k = read_ken_ken("3: 2/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
         for i in 0..k_solver.ken_ken().regions().len() {
@@ -628,6 +627,7 @@ mod tests {
         for i in 0..k_solver.ken_ken().regions().len() {
             k_solver.apply_constraint(i);
         }
+        println!("{}", k_solver.latin_solver.cube_to_string());
         assert_eq!(k_solver.latin_solver.get_cube_available(3, 0), 0b0001);
     }
 
