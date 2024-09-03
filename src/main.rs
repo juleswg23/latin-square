@@ -5,6 +5,7 @@ use std::env;
 mod latin;
 use latin::LatinSolver;
 mod kenken;
+mod math;
 
 fn main() {
     use std::time::Instant;
@@ -71,7 +72,7 @@ mod tests {
 
         let elapsed = now.elapsed();
         println!("Elapsed: {:.2?}", elapsed);
-        assert!(3 == 3);
+        assert_eq!(3, 3);
     }
 
 
