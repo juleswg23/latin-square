@@ -339,7 +339,7 @@ impl KenKenSolver {
         }
     }
 
-    // Helper function to grab the 
+    // Helper function to grab the
     fn available_masks(&self, region: &Region) -> Vec<i32> {
         let mut available_masks: Vec<i32> = vec![0b0; region.cells().len()];
         for i in 0..region.cells().len() {
@@ -349,10 +349,12 @@ impl KenKenSolver {
         available_masks
     }
 
+    // kenken getter
     pub fn ken_ken(&self) -> &KenKen {
         &self.ken_ken
     }
 
+    // latin solver getter
     pub fn latin_solver(&self) -> &LatinSolver {
         &self.latin_solver
     }
@@ -370,9 +372,11 @@ fn read_ken_ken(input: String) -> KenKen {
 
     let mut ken_ken = KenKen::new(order);
 
+    // Skip to fourth character.
     let mut chars = input[3..].chars();
 
     while let Some(character) = chars.next() {
+        // Target may be mutliple digits long
         let mut target_builder: String = String::new();
         let mut c = character;
         while c.is_digit(10) {
@@ -426,6 +430,7 @@ mod tests {
     use super::*;
 
     // TODO refactor test code so it's not so repetitive.
+    
 
     #[test]
     fn test_subtraction() {
@@ -579,7 +584,7 @@ mod tests {
         );
         let mut k_solver: KenKenSolver = KenKenSolver::new(k);
         k_solver.apply_constraint(0);
-        println!("{}", k_solver.latin_solver.cube_to_string());
+        //println!("{}", k_solver.latin_solver.cube_to_string());
         assert_eq!(k_solver.latin_solver.get_cube_available(0, 0), 0b1111);
         assert_eq!(k_solver.latin_solver.get_cube_available(0, 1), 0b1111);
         assert_eq!(k_solver.latin_solver.get_cube_available(1, 1), 0b1111);
