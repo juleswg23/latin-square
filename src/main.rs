@@ -44,6 +44,7 @@ mod tests {
     // use latin::LatinSolver;
 
     //#[test]
+    #[allow(dead_code)]
     fn test2() {
         env::set_var("RUST_BACKTRACE", "1");
         let mut ls = LatinSolver::new(6);

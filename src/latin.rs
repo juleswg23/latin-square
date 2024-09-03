@@ -64,12 +64,12 @@ impl LatinSolver {
         }
     }
 
-    pub fn get_cube_loc_available(&self, x: usize, y: usize) -> i32 {
+    pub fn get_cube_available(&self, x: usize, y: usize) -> i32 {
         self.cube[self.get_loc(x, y)]
     }
 
     // Update a subarray at a particular position with pruned (or expanded) choices of available digits
-    pub fn set_cube_loc_available(&mut self, x: usize, y: usize, available: i32) -> () {
+    pub fn set_cube_available(&mut self, x: usize, y: usize, available: i32) -> () {
         assert!(available < 0b1 << self.order && available >= 0);
         let location = self.get_loc(x, y);
         self.cube[location] = available;
