@@ -21,9 +21,10 @@ pub struct LatinSolver {
     // might be useful to have grid appear elsewhere as its own type
     grid: Vec<usize>, // order^2
 
-  // Currently unused
-  // row: Vec<bool>,   // order^2
-  // col: Vec<bool>,   // order^2
+    // row[x] is represented by the indices order*x..order*(x+1)
+    // so 3 is in row x if row[x*order + 3] is true
+    row: Vec<bool>,   // order^2
+    col: Vec<bool>,   // order^2
 }
 
 impl LatinSolver {
@@ -35,9 +36,8 @@ impl LatinSolver {
             cube: vec![(0b1 << order) - 1; order.pow(2)], // 0 at bit k when k is not possible in that cell
             grid: vec![0; order.pow(2)], // The completed grid of values 1 through order, 0s before solved
 
-             // Currently unused
-             //row: vec![false; order.pow(2)], // false when the val is not yet present in row x
-             //col: vec![false; order.pow(2)], // false when the val is not yet present in col y
+            row: vec![false; order.pow(2)], // false when the val is not yet present in row x
+            col: vec![false; order.pow(2)], // false when the val is not yet present in col y
         }
     }
 
@@ -53,6 +53,14 @@ impl LatinSolver {
 
     pub fn grid(&self) -> &Vec<usize> {
         &self.grid
+    }
+
+    pub fn row(&self) -> &Vec<bool> {
+        &self.row
+    }
+
+    pub fn col(&self) -> &Vec<bool> {
+        &self.col
     }
 
     // Get the location at coordinates (x,y)
@@ -324,7 +332,17 @@ impl LatinSolver {
     // column. This may reveal a single candidate, in which case we have a solution for that cell.
     // NOTE will not update the grid, only the cube (candidates) data structure
     fn impossible_candidates(&mut self) -> () {
-
+        for row in 0..self.order() {
+            
+            for col in 0..self.order() {
+                
+            }
+        }
+        for index in 0..self.grid().len() {
+            if self.grid[index] != 0 {
+                
+            }
+        }
     }
 
     // If a candidate occurs once only in a row or column we can make it the solution to the cell.
@@ -363,13 +381,14 @@ impl LatinSolver {
             // TODO call different logical functions to update
         }
     }
+    
 }
 
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_update_solved_grid_cells() {
         let mut ls = LatinSolver::new(6);
@@ -380,7 +399,7 @@ mod tests {
         assert_eq!(4, ls.get_grid_value(4, 4));
         assert_eq!(6, ls.get_grid_value(4, 5));
         assert_eq!(0, ls.get_grid_value(4, 2));
-        
+
         // TODO remove printlns
         println!("{}", ls.cube_to_string());
         println!("{}", ls.grid_to_string());
