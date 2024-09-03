@@ -3,6 +3,16 @@
 
 use itertools::Itertools;
 use std::cmp::Ordering;
+use crate::math::math;
+
+/// Enum for the solver to track the status of completion
+#[derive(Debug, PartialEq)]
+enum SolvedStatus {
+    Complete,
+    Incomplete,
+    Broken,
+}
+
 /// An object that contains solving data for Latin Square puzzles
 pub struct LatinSolver {
     order: usize,     // the dimension of the square KenKen grid
@@ -12,8 +22,8 @@ pub struct LatinSolver {
     grid: Vec<usize>, // order^2
 
   // Currently unused
-  //row: Vec<bool>,   // order^2
-  //col: Vec<bool>,   // order^2
+  // row: Vec<bool>,   // order^2
+  // col: Vec<bool>,   // order^2
 }
 
 impl LatinSolver {
@@ -35,6 +45,14 @@ impl LatinSolver {
 
     pub fn order(&self) -> usize {
         self.order
+    }
+
+    pub fn cube(&self) -> &Vec<i32> {
+        &self.cube
+    }
+
+    pub fn grid(&self) -> &Vec<usize> {
+        &self.grid
     }
 
     // Get the location at coordinates (x,y)
@@ -279,13 +297,27 @@ impl LatinSolver {
     /********************** sudokuwiki Solving functions **********************/
 
     // Check for solved grid cells (cells with only one candidate remaining) and update grid
-    // Returns true if the whole puzzle is solved. // TODO maybe some other true?
-    fn update_solved_grid_cells(&mut self) -> bool {
-        // for cell in self.cube. {
-        //     
-        // }
-        false
-        
+    // Returns problem status if the whole puzzle is solved, incomplete, or broken. // TODO maybe some other true?
+    fn update_solved_grid_cells(&mut self) -> SolvedStatus {
+        let mut outcome = SolvedStatus::Complete;
+
+        for index in 0..self.cube().len() {
+            let cell = self.cube[index];
+            if cell == 0b0 {
+                return SolvedStatus::Broken;
+            }
+
+            // This will be true when there is exactly one set bit in the variable
+            if (cell & (cell - 1)) == 0 {
+                let (x, y ) = math::xy_pair(index, self.order());
+                let n = (cell as f32).log2() as usize + 1;
+                self.set_grid_value(x, y, n);
+            } else {
+                outcome = SolvedStatus::Incomplete;
+            }
+
+        }
+        outcome
     }
 
     // For each unknown cell we eliminate all candidates where the digit is known in the row or
@@ -297,20 +329,20 @@ impl LatinSolver {
 
     // If a candidate occurs once only in a row or column we can make it the solution to the cell.
     fn hidden_single(&mut self) -> () {
-        
+
     }
 
-    // We check for 'naked' pairs. For example, if we have two pairs, eg 3-4 and 3-4 in the same
+    // We check for 'naked' pairs. For example, if we have two pairs, e.g. 3-4 and 3-4 in the same
     // row or column, then both 3 and 4 must occupy those squares (in what ever order). 3 and 4
     // can then be eliminated from the rest of the row and column.
     fn naked_pair(&mut self) -> () {
-        
+
     }
 
     // If two candidates occur only twice in a row or column we can make then a naked pair, and call
     // that function to eliminate candidates from the row/col.
     fn hidden_pair(&mut self) -> () {
-        
+
     }
 
     // We check for 'naked' triples and eliminate candidates seen by them
@@ -331,6 +363,33 @@ impl LatinSolver {
             // TODO call different logical functions to update
         }
     }
+}
 
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_update_solved_grid_cells() {
+        let mut ls = LatinSolver::new(6);
+        ls.set_cube_available(4, 4, 0b001000);
+        ls.set_cube_available(4, 5, 0b100000);
+        ls.set_cube_available(4, 2, 0b111000);
+        assert_eq!(SolvedStatus::Incomplete, ls.update_solved_grid_cells());
+        assert_eq!(4, ls.get_grid_value(4, 4));
+        assert_eq!(6, ls.get_grid_value(4, 5));
+        assert_eq!(0, ls.get_grid_value(4, 2));
+        
+        // TODO remove printlns
+        println!("{}", ls.cube_to_string());
+        println!("{}", ls.grid_to_string());
+    }
+
+    fn test_impossible_candidates() {
+        let mut ls = LatinSolver::new(6);
+        ls.set_cube_available(4, 4, 0b001000);
+        ls.set_cube_available(4, 2, 0b111000);
+        assert_eq!(SolvedStatus::Incomplete, ls.update_solved_grid_cells());
+    }
 }
