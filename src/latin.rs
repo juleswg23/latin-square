@@ -31,18 +31,19 @@ impl LatinSolver {
         }
     }
 
-    /**************************** Cube functions ****************************/
+    /**************************** Getter functions ****************************/
 
     pub fn order(&self) -> usize {
         self.order
     }
 
-    /**************************** Cube functions ****************************/
-
     // Get the location at coordinates (x,y)
     fn get_loc(&self, x: usize, y: usize) -> usize {
         x * self.order + y
     }
+
+
+    /**************************** Cube functions ****************************/
 
     // True means the value (n) is still possible at that coordinate (x,y)
     fn get_cube_value(&self, x: usize, y: usize, n: usize) -> bool {
@@ -184,7 +185,7 @@ impl LatinSolver {
             }
         }
 
-        //todo update rows and cols data structures
+        // TODO update rows and cols data structures
 
         old_data
     }
@@ -274,5 +275,58 @@ impl LatinSolver {
 
         self.recursive_solve(&mut count, deep)
     }
+
+    /********************** sudokuwiki Solving functions **********************/
+
+    // Check for solved grid cells (cells with only one candidate remaining) and update grid
+    // Returns true if the whole puzzle is solved. // TODO maybe some other true?
+    fn update_solved_grid_cells() -> bool {
+        false
+    }
+
+    // For each unknown cell we eliminate all candidates where the digit is known in the row or
+    // column. This may reveal a single candidate, in which case we have a solution for that cell.
+    // NOTE will not update the grid, only the cube (candidates) data structure
+    fn impossible_candidates() -> () {
+
+    }
+
+    // If a candidate occurs once only in a row or column we can make it the solution to the cell.
+    fn hidden_single() -> () {
+
+    }
+
+    // We check for 'naked' pairs. For example, if we have two pairs, eg 3-4 and 3-4 in the same
+    // row or column, then both 3 and 4 must occupy those squares (in what ever order). 3 and 4
+    // can then be eliminated from the rest of the row and column.
+    fn naked_pair() -> () {
+        
+    }
+
+    // If two candidates occur only twice in a row or column we can make then a naked pair, and call
+    // that function to eliminate candidates from the row/col.
+    fn hidden_pair() -> () {
+        
+    }
+
+    // We check for 'naked' triples and eliminate candidates seen by them
+    fn naked_triple() -> () {
+
+    }
+
+    // If three candidates occur only thrice in a row or column we can make then a naked triple,
+    // and call that function to eliminate candidates from the row/col.
+    fn hidden_triple() -> () {
+
+    }
+
+    pub fn stepped_logical_solver(&mut self) {
+        let mut old_cube = 0;
+        let mut current_cube = 1; // TODO choose how to represent cubes
+        while (old_cube != current_cube) {
+            // TODO call different logical functions to update
+        }
+    }
+
 
 }
