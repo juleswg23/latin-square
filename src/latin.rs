@@ -246,7 +246,10 @@ impl LatinSolver {
 
     // Given a row, remove the candidate from all cells in cube except the locations provided in do_not_remove
     // TODO MAYBE try not to call if row has no changes, cuz this looks sorta expensive
-    fn cube_remove_candidate_row(&mut self, row: usize, n: usize, do_not_remove: Vec<usize>) {
+    // Returns true if candidates were removed
+    fn cube_remove_candidate_row(&mut self, row: usize, n: usize, do_not_remove: Vec<usize>) -> bool {
+        let mut result = false;
+        
         // This mask is all 1s except at the nth bit
         let mask: i32 = -(0b1 << (n-1)) - 1;
 
@@ -255,13 +258,19 @@ impl LatinSolver {
                 let old_mask = self.get_cube_available(row, i);
                 let new_mask = old_mask & mask;
                 self.set_cube_available(row, i, new_mask);
+                
+                // updates result to true if old_mask is different from new_mask
+                result |= old_mask != new_mask;
             }
         }
+        result
     }
 
     // Given a column, remove the candidate from all cells in cube except the locations provided in do_not_remove
     // TODO MAYBE try not to call if row has no changes, cuz this looks sorta expensive
-    fn cube_remove_candidate_col(&mut self, col: usize, n: usize, do_not_remove: Vec<usize>) {
+    fn cube_remove_candidate_col(&mut self, col: usize, n: usize, do_not_remove: Vec<usize>) -> bool {
+        let mut result = false;
+        
         // This mask is all 1s except at the nth bit
         let mask: i32 = -(0b1 << (n-1)) - 1;
 
@@ -270,8 +279,11 @@ impl LatinSolver {
                 let old_mask = self.get_cube_available(i, col);
                 let new_mask = old_mask & mask;
                 self.set_cube_available(i, col, new_mask);
+                // updates result to true if old_mask is different from new_mask
+                result |= old_mask != new_mask;
             }
         }
+        result
     }
 
     /************************** Brute force solving functions **************************/
@@ -392,16 +404,20 @@ impl LatinSolver {
     // For each unknown cell we eliminate all candidates where the digit is known in the row or
     // column. This may reveal a single candidate, in which case we have a solution for that cell.
     // NOTE will not update the grid, only the cube (candidates) data structure
-    fn impossible_candidates(&mut self) -> () {
+    //
+    // Returns true if candidates were successfully removed
+    fn impossible_candidates(&mut self) -> bool {
+        let mut result = false;
         for i in 0..self.order() {
             for j in 0..self.order() {
                 let n = self.get_grid_value(i, j);
                 if n != 0 {
-                    self.cube_remove_candidate_row(i, n, vec![j]);
-                    self.cube_remove_candidate_col(j, n, vec![i]);
+                    result = self.cube_remove_candidate_row(i, n, vec![j]) |
+                        self.cube_remove_candidate_col(j, n, vec![i]);
                 }
             }
         }
+        result
     }
 
     // If a candidate occurs once only in a row or column we can make it the solution to the cell.
@@ -472,12 +488,14 @@ mod tests {
         ls.set_cube_available(2, 3, 0b111000);
 
         assert_eq!(SolvedStatus::Incomplete, ls.update_solved_grid_cells());
-        ls.impossible_candidates();
+        assert_eq!(true, ls.impossible_candidates());
         assert_eq!(0b010000, ls.get_cube_available(2, 3));
         assert_eq!(0b010111, ls.get_cube_available(4, 3));
         ls.update_solved_grid_cells();
-        ls.impossible_candidates();
+        assert_eq!(true, ls.impossible_candidates());
         assert_eq!(0b000111, ls.get_cube_available(4, 3));
+        ls.update_solved_grid_cells();
+        assert_eq!(false, ls.impossible_candidates());
 
     }
 }
