@@ -380,7 +380,7 @@ impl LatinSolver {
 
     /********************** sudokuwiki Solving functions **********************/
 
-    // Check for solved grid cells (cells with only one candidate remaining) and update grid
+    // Check for solved cells in cube structure (cells with only one candidate remaining) and update grid
     // Returns problem status if the whole puzzle is solved, incomplete, or broken. // TODO maybe some other true?
     fn update_solved_grid_cells(&mut self) -> SolvedStatus {
         let mut outcome = SolvedStatus::Complete;
@@ -410,7 +410,7 @@ impl LatinSolver {
     // NOTE will not update the grid, only the cube (candidates) data structure
     //
     // Returns true if candidates were successfully removed
-    fn impossible_candidates(&mut self) -> bool {
+    fn update_candidates(&mut self) -> bool {
         let mut result = false;
         for i in 0..self.order() {
             for j in 0..self.order() {
@@ -425,7 +425,8 @@ impl LatinSolver {
     }
 
     // If a candidate occurs once only in a row or column we can make it the solution to the cell.
-    fn hidden_single(&mut self) -> () {
+    // returns true after the first one is found
+    fn hidden_single(&mut self) -> bool {
         for i in 0..self.order() {
             let mut row_count: Vec<usize> = vec![0; self.order()]; // the 0th element represents the digit 1
             let mut col_count: Vec<usize> = vec![0; self.order()];
@@ -449,15 +450,45 @@ impl LatinSolver {
                     col_count[self.get_grid_value(j, i) - 1] += 1;
                 }
             }
-            println!("debug {:?}", row_count);
-            for (index, elem) in row_count.iter().enumerate() {
+            
+            // check if any have a count of 1
+            // if yes, find the cell with that as an available 
+            if helper_update_grid(self, i, &mut row_count, true) {
+                return true;
+            }
+            if helper_update_grid(self, i, &mut col_count, false) {
+                return true;
+            }
+        }
+
+        // helper function to update the grid in case of 1 in the count
+        fn helper_update_grid(this: &mut LatinSolver, i: usize, count: &mut Vec<usize>, check_row: bool) -> bool {
+            for (index, elem) in count.iter().enumerate() {
                 if *elem == 1 {
-                    println!("found a hidden single {:?} at row {:?}", index, i);
+                    let mask = 0b1 << index;
+                    for j in 0..this.order() {
+                        // flip row and col depending on check_row, so we don't have to rewrite code
+                        if check_row {
+                            if this.get_cube_available(i, j) & mask != 0 {
+                                this.place_digit(i, j, index + 1);
+                                return true;
+                            }
+                        } else {
+                            if this.get_cube_available(j, i) & mask != 0 {
+                                this.place_digit(j, i, index + 1);
+                                return true;
+                            }
+                        }
+                    }
                 }
             }
-
+            false
         }
+        
+        false
     }
+
+    
 
     // We check for 'naked' pairs. For example, if we have two pairs, e.g. 3-4 and 3-4 in the same
     // row or column, then both 3 and 4 must occupy those squares (in what ever order). 3 and 4
@@ -525,40 +556,45 @@ mod tests {
     }
 
     #[test]
-    fn test_impossible_candidates() {
+    fn test_update_candidates() {
         let mut ls = LatinSolver::new(6);
         ls.set_cube_available(0, 3, 0b001000);
         ls.set_cube_available(1, 3, 0b100000);
         ls.set_cube_available(2, 3, 0b111000);
 
         assert_eq!(SolvedStatus::Incomplete, ls.update_solved_grid_cells());
-        assert_eq!(true, ls.impossible_candidates());
+        assert_eq!(true, ls.update_candidates());
         assert_eq!(0b010000, ls.get_cube_available(2, 3));
         assert_eq!(0b010111, ls.get_cube_available(4, 3));
         ls.update_solved_grid_cells();
-        assert_eq!(true, ls.impossible_candidates());
+        assert_eq!(true, ls.update_candidates());
         assert_eq!(0b000111, ls.get_cube_available(4, 3));
         ls.update_solved_grid_cells();
-        assert_eq!(false, ls.impossible_candidates());
+        assert_eq!(false, ls.update_candidates());
     }
 
     #[test]
     fn test_hidden_singles() {
         // TODO add assert
         let mut ls = LatinSolver::new(6);
-        ls.set_cube_available(1, 0, 0b011000);
-        ls.set_cube_available(1, 1, 0b110100);
-        ls.set_cube_available(1, 2, 0b110101);
+        ls.set_cube_available(1, 0, 0b111111);
+        ls.set_cube_available(1, 1, 0b100100);
+        ls.set_cube_available(1, 2, 0b100100);
         ls.set_cube_available(1, 3, 0b110111);
-        ls.set_cube_available(1, 4, 0b110011);
-        ls.set_cube_available(1, 5, 0b010000);
+        ls.set_cube_available(1, 4, 0b110001);
+        ls.set_cube_available(1, 5, 0b100001);
+        //assert!
+        (ls.hidden_single());
+        assert_eq!(4, ls.get_grid_value(1, 0));
+        assert!(!ls.get_cube_value(3, 0, 4));
+        assert!(ls.get_cube_value(1, 0, 4));
         ls.hidden_single();
-        ls.update_solved_grid_cells();
-        ls.impossible_candidates();
+        assert_eq!(2, ls.get_grid_value(1, 3));
+        assert!(!ls.get_cube_value(3, 3, 2));
+        assert!(ls.get_cube_value(1, 3, 2));
         ls.hidden_single();
-        ls.update_solved_grid_cells();
-
-        println!("{}", ls.cube_to_string());
-        println!("{}", ls.grid_to_string());
+        assert_eq!(5, ls.get_grid_value(1, 4));
+        ls.hidden_single();
+        assert_eq!(1, ls.get_grid_value(1, 5));
     }
 }
