@@ -16,15 +16,15 @@ enum SolvedStatus {
 /// An object that contains solving data for Latin Square puzzles
 pub struct LatinSolver {
     order: usize,     // the dimension of the square KenKen grid
-    cube: Vec<i32>,   // order^3 // TODO maybe refactor cube to be a 2d array of binary ints.
+    cube: Vec<i32>,   // order^2 - a 2d array of binary ints.
 
     // might be useful to have grid appear elsewhere as its own type
     grid: Vec<usize>, // order^2
 
-    // row[x] is represented by the indices order*x..order*(x+1)
-    // so 3 is in row x if row[x*order + 3] is true
-    row: Vec<bool>,   // order^2
-    col: Vec<bool>,   // order^2
+    // row x, value n is represented by the nth bit of row[x], where n=1 is the smallest bit
+    // so 3 is placed in row x if row[x] & 0b100 == 0
+    row_candidates: Vec<i32>,   // order^1 of binary ints
+    col_candidates: Vec<i32>,   // order^1 of binary ints
 }
 
 impl LatinSolver {
@@ -36,8 +36,8 @@ impl LatinSolver {
             cube: vec![(0b1 << order) - 1; order.pow(2)], // 0 at bit k when k is not possible in that cell
             grid: vec![0; order.pow(2)], // The completed grid of values 1 through order, 0s before solved
 
-            row: vec![false; order.pow(2)], // false when the val is not yet present in row x
-            col: vec![false; order.pow(2)], // false when the val is not yet present in col y
+            row_candidates: vec![(0b1 << order) - 1; order.pow(2)], // 1 when the val is not yet present in row x
+            col_candidates: vec![(0b1 << order) - 1; order.pow(2)], // 1 when the val is not yet present in col y
         }
     }
 
@@ -55,12 +55,12 @@ impl LatinSolver {
         &self.grid
     }
 
-    pub fn row(&self) -> &Vec<bool> {
-        &self.row
+    pub fn row_candidates(&self) -> &Vec<i32> {
+        &self.row_candidates
     }
 
-    pub fn col(&self) -> &Vec<bool> {
-        &self.col
+    pub fn col_candidates(&self) -> &Vec<i32> {
+        &self.col_candidates
     }
 
     // Get the location at coordinates (x,y)
@@ -137,7 +137,6 @@ impl LatinSolver {
 
     /**************************** Grid functions ****************************/
 
-
     // Get the value at the grid
     fn get_grid_value(&self, x: usize, y: usize) -> usize {
         self.grid[self.get_loc(x, y)]
@@ -180,6 +179,35 @@ impl LatinSolver {
         result
     }
 
+    /**************************** Row and column functions ****************************/
+
+    // Change the bit at n in row and col data structures to a 0 since we found the digit
+    fn found_row_col(&mut self, x: usize, y: usize, n: usize) -> () {
+        assert!(x < self.order() && y < self.order(), "x or y is out of bounds");
+        assert!(n > 0 && n <= self.order(), "n is out of bounds");
+
+        // This mask is 1 everywhere except for bit n
+        let mask: i32 = -(0b1 << (n-1)) - 1;
+        self.row_candidates[x] &= mask;
+        self.col_candidates[y] &= mask;
+    }
+
+    // Change the bit at n in row and col data structures to a 1 since it is still a candidate
+    fn unfound_row_col(&mut self, x: usize, y: usize, n: usize) -> () {
+        assert!(x < self.order() && y < self.order(), "x or y is out of bounds");
+        assert!(n > 0 && n <= self.order(), "n is out of bounds");
+
+        // This mask is 0 everywhere except for bit n
+        let mask: i32 = 0b1 << (n-1);
+        self.row_candidates[x] |= mask;
+        self.col_candidates[y] |= mask;
+    }
+
+    fn row_col_to_string(&self) -> String {
+        // TODO implement
+        String::from("")
+    }
+
     /************************** Solving functions **************************/
 
     // Place a digit in the final grid,
@@ -210,16 +238,49 @@ impl LatinSolver {
                 self.set_cube_value(x, y, i, false);
             }
         }
-
-        // TODO update rows and cols data structures
+        // Update row and col data structures
+        self.found_row_col(x, y, n);
 
         old_data
     }
 
+    // Given a row, remove the candidate from all cells in cube except the locations provided in do_not_remove
+    // TODO MAYBE try not to call if row has no changes, cuz this looks sorta expensive
+    fn cube_remove_candidate_row(&mut self, row: usize, n: usize, do_not_remove: Vec<usize>) {
+        // This mask is all 1s except at the nth bit
+        let mask: i32 = -(0b1 << (n-1)) - 1;
+
+        for i in 0..self.order() {
+            if !do_not_remove.contains(&i) { // skip unless not in do not remove
+                let old_mask = self.get_cube_available(row, i);
+                let new_mask = old_mask & mask;
+                self.set_cube_available(row, i, new_mask);
+            }
+        }
+    }
+
+    // Given a column, remove the candidate from all cells in cube except the locations provided in do_not_remove
+    // TODO MAYBE try not to call if row has no changes, cuz this looks sorta expensive
+    fn cube_remove_candidate_col(&mut self, col: usize, n: usize, do_not_remove: Vec<usize>) {
+        // This mask is all 1s except at the nth bit
+        let mask: i32 = -(0b1 << (n-1)) - 1;
+
+        for i in 0..self.order() {
+            if !do_not_remove.contains(&i) { // skip unless not in do not remove
+                let old_mask = self.get_cube_available(i, col);
+                let new_mask = old_mask & mask;
+                self.set_cube_available(i, col, new_mask);
+            }
+        }
+    }
+
+    /************************** Brute force solving functions **************************/
+    
     // Returns the location and vector of available digits at that location from the cube structure
     // Or, if no location is found with multiple possibilities, returns none
     // CAREFUL - it updates the cube and grid structures if they are out of sync.
     // TODO later change this to read-only on the self param
+    // TODO delete this function... why do I need it?
     fn find_unsolved_location(&mut self) -> Option<(usize, usize, Vec<usize>)> {
         for i in 0..self.order {
             for j in 0..self.order {
@@ -332,15 +393,13 @@ impl LatinSolver {
     // column. This may reveal a single candidate, in which case we have a solution for that cell.
     // NOTE will not update the grid, only the cube (candidates) data structure
     fn impossible_candidates(&mut self) -> () {
-        for row in 0..self.order() {
-            
-            for col in 0..self.order() {
-                
-            }
-        }
-        for index in 0..self.grid().len() {
-            if self.grid[index] != 0 {
-                
+        for i in 0..self.order() {
+            for j in 0..self.order() {
+                let n = self.get_grid_value(i, j);
+                if n != 0 {
+                    self.cube_remove_candidate_row(i, n, vec![j]);
+                    self.cube_remove_candidate_col(j, n, vec![i]);
+                }
             }
         }
     }
@@ -381,14 +440,14 @@ impl LatinSolver {
             // TODO call different logical functions to update
         }
     }
-    
+
 }
 
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    
     #[test]
     fn test_update_solved_grid_cells() {
         let mut ls = LatinSolver::new(6);
@@ -400,15 +459,25 @@ mod tests {
         assert_eq!(6, ls.get_grid_value(4, 5));
         assert_eq!(0, ls.get_grid_value(4, 2));
 
-        // TODO remove printlns
-        println!("{}", ls.cube_to_string());
-        println!("{}", ls.grid_to_string());
+        // TODO remove print lines
+        // println!("{}", ls.cube_to_string());
+        // println!("{}", ls.grid_to_string());
     }
 
+    #[test]
     fn test_impossible_candidates() {
         let mut ls = LatinSolver::new(6);
-        ls.set_cube_available(4, 4, 0b001000);
-        ls.set_cube_available(4, 2, 0b111000);
+        ls.set_cube_available(0, 3, 0b001000);
+        ls.set_cube_available(1, 3, 0b100000);
+        ls.set_cube_available(2, 3, 0b111000);
+
         assert_eq!(SolvedStatus::Incomplete, ls.update_solved_grid_cells());
+        ls.impossible_candidates();
+        assert_eq!(0b010000, ls.get_cube_available(2, 3));
+        assert_eq!(0b010111, ls.get_cube_available(4, 3));
+        ls.update_solved_grid_cells();
+        ls.impossible_candidates();
+        assert_eq!(0b000111, ls.get_cube_available(4, 3));
+
     }
 }
