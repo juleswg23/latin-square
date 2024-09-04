@@ -3,6 +3,7 @@
 
 use itertools::Itertools;
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use crate::math::math;
 
 /// Enum for the solver to track the status of completion
@@ -71,6 +72,7 @@ impl LatinSolver {
 
     /**************************** Cube functions ****************************/
 
+    // TODO eventually delete these first two functions.
     // True means the value (n) is still possible at that coordinate (x,y)
     fn get_cube_value(&self, x: usize, y: usize, n: usize) -> bool {
         let location = self.get_loc(x, y);
@@ -90,6 +92,7 @@ impl LatinSolver {
         }
     }
 
+    // Get the cube data structure representing available digits at (x, y)
     pub fn get_cube_available(&self, x: usize, y: usize) -> i32 {
         self.cube[self.get_loc(x, y)]
     }
@@ -267,6 +270,7 @@ impl LatinSolver {
 
     // Given a column, remove the candidate from all cells in cube except the locations provided in do_not_remove
     // TODO MAYBE try not to call if row has no changes, cuz this looks sorta expensive
+    // Returns true if candidates were removed
     fn cube_remove_candidate_col(&mut self, col: usize, n: usize, do_not_remove: Vec<usize>) -> bool {
         let mut result = false;
 
@@ -402,6 +406,7 @@ impl LatinSolver {
 
     // For each unknown cell we eliminate all candidates where the digit is known in the row or
     // column. This may reveal a single candidate, in which case we have a solution for that cell.
+    // Equivalent to a naked single.
     // NOTE will not update the grid, only the cube (candidates) data structure
     //
     // Returns true if candidates were successfully removed
@@ -421,7 +426,37 @@ impl LatinSolver {
 
     // If a candidate occurs once only in a row or column we can make it the solution to the cell.
     fn hidden_single(&mut self) -> () {
+        for i in 0..self.order() {
+            let mut row_count: Vec<usize> = vec![0; self.order()]; // the 0th element represents the digit 1
+            let mut col_count: Vec<usize> = vec![0; self.order()];
 
+            // get the counts for digit n in row i and col i respectively
+            for j in 0..self.order() {
+                for n in 1..=self.order() {
+                    if self.get_cube_value(i, j, n) {
+                        row_count[n - 1] += 1;
+                    }
+                    if self.get_cube_value(j, i, n) {
+                        col_count[n - 1] += 1;
+                    }
+                }
+                // check if value has been placed in row or col
+                // if it has, ensure we won't find a hidden single here
+                if self.get_grid_value(i, j) != 0 {
+                    row_count[self.get_grid_value(i, j) - 1] += 1;
+                }
+                if self.get_grid_value(j, i) != 0 {
+                    col_count[self.get_grid_value(j, i) - 1] += 1;
+                }
+            }
+            println!("debug {:?}", row_count);
+            for (index, elem) in row_count.iter().enumerate() {
+                if *elem == 1 {
+                    println!("found a hidden single {:?} at row {:?}", index, i);
+                }
+            }
+
+        }
     }
 
     // We check for 'naked' pairs. For example, if we have two pairs, e.g. 3-4 and 3-4 in the same
@@ -505,6 +540,25 @@ mod tests {
         assert_eq!(0b000111, ls.get_cube_available(4, 3));
         ls.update_solved_grid_cells();
         assert_eq!(false, ls.impossible_candidates());
+    }
 
+    #[test]
+    fn test_hidden_singles() {
+        // TODO add assert
+        let mut ls = LatinSolver::new(6);
+        ls.set_cube_available(1, 0, 0b011000);
+        ls.set_cube_available(1, 1, 0b110100);
+        ls.set_cube_available(1, 2, 0b110101);
+        ls.set_cube_available(1, 3, 0b110111);
+        ls.set_cube_available(1, 4, 0b110011);
+        ls.set_cube_available(1, 5, 0b010000);
+        ls.hidden_single();
+        ls.update_solved_grid_cells();
+        ls.impossible_candidates();
+        ls.hidden_single();
+        ls.update_solved_grid_cells();
+
+        println!("{}", ls.cube_to_string());
+        println!("{}", ls.grid_to_string());
     }
 }
