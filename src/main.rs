@@ -48,15 +48,14 @@ mod tests {
     #[allow(dead_code)]
     fn test2() {
         env::set_var("RUST_BACKTRACE", "1");
-        let mut ls = LatinSolver::new(6);
+        let mut ls = LatinSolver::new(3);
         // println!("{}", ls.cube.len());
         // println!("{}", ls.get_cube_loc(3, 3, 4));
         // println!("{}", ls.get_cube_value(3, 3, 2));
         // println!("{}", ls.get_grid_value(3, 3));
 
-        ls.place_digit(3, 3, 3);
-        ls.place_digit(1, 3, 2);
-        ls.place_digit(0, 0, 2);
+        ls.place_digit(0, 1, 3);
+        ls.place_digit(0, 0, 1);
 
         // println!("{}", ls.get_cube_value(3, 3, 2));
         // println!("{}", ls.get_cube_value(3, 3, 3));
