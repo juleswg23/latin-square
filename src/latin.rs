@@ -87,7 +87,7 @@ impl LatinSolver {
                 self.cube[location] |= 0b1 << (n-1);
             },
             false => { // turn off the bit
-                self.cube[location] &= -(0b1 << (n-1)) - 1;
+                self.cube[location] &= !(0b1 << (n-1));
             },
         }
     }
@@ -189,7 +189,7 @@ impl LatinSolver {
         assert!(n > 0 && n <= self.order(), "n is out of bounds");
 
         // This mask is 1 everywhere except for bit n
-        let mask: i32 = -(0b1 << (n-1)) - 1;
+        let mask: i32 = !(0b1 << (n-1));
         self.row_candidates[x] &= mask;
         self.col_candidates[y] &= mask;
     }
@@ -253,7 +253,7 @@ impl LatinSolver {
         let mut result = false;
 
         // This mask is all 1s except at the nth bit
-        let mask: i32 = -(0b1 << (n-1)) - 1;
+        let mask: i32 = !(0b1 << (n-1));
 
         for i in 0..self.order() {
             if !do_not_remove.contains(&i) { // skip unless not in do not remove
@@ -275,7 +275,7 @@ impl LatinSolver {
         let mut result = false;
 
         // This mask is all 1s except at the nth bit
-        let mask: i32 = -(0b1 << (n-1)) - 1;
+        let mask: i32 = !(0b1 << (n-1));
 
         for i in 0..self.order() {
             if !do_not_remove.contains(&i) { // skip unless not in do not remove
