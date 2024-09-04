@@ -1,5 +1,6 @@
 #![allow(unreachable_code)]
 #![allow(unused_mut)]
+#![allow(unused_variables)]
 
 use std::env;
 mod latin;
@@ -72,6 +73,11 @@ mod tests {
         let elapsed = now.elapsed();
         println!("Elapsed: {:.2?}", elapsed);
         assert_eq!(3, 3);
+    }
+
+    #[test]
+    fn simple_solve_test() {
+        let mut ls = LatinSolver::new(3);
     }
 
 
