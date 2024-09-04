@@ -343,9 +343,6 @@ fn read_ken_ken(input: String) -> KenKen {
     // Takes a string input of a KenKen, and converts it to a KenKen object
     // Example format looks like 3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:
 
-    // Takes a string input of a KenKen, and converts it to a KenKen object
-    // Example format looks like "3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:"
-
     // TODO remove panics
     let order: usize = input[0..=0].to_string().parse().expect("Not a number");
 
@@ -606,7 +603,6 @@ mod tests {
         for i in 0..k_solver.ken_ken().regions().len() {
             k_solver.apply_constraint(i);
         }
-        println!("{}", k_solver.latin_solver.cube_to_string());
         assert_eq!(k_solver.latin_solver.get_cube_available(3, 0), 0b0001);
     }
 
