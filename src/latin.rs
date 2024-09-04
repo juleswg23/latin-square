@@ -81,12 +81,11 @@ impl LatinSolver {
     fn set_cube_value(&mut self, x: usize, y: usize, n: usize, b: bool) -> () {
         let location = self.get_loc(x, y);
         match b {
-            true => {
+            true => { // turn on the bit
                 self.cube[location] |= 0b1 << (n-1);
             },
-            false => {
-                let all_ones_mask = (0b1 << self.order) - 1;
-                self.cube[location] &= (0b1 << (n-1)) ^ all_ones_mask;
+            false => { // turn off the bit
+                self.cube[location] &= -(0b1 << (n-1)) - 1;
             },
         }
     }
@@ -249,7 +248,7 @@ impl LatinSolver {
     // Returns true if candidates were removed
     fn cube_remove_candidate_row(&mut self, row: usize, n: usize, do_not_remove: Vec<usize>) -> bool {
         let mut result = false;
-        
+
         // This mask is all 1s except at the nth bit
         let mask: i32 = -(0b1 << (n-1)) - 1;
 
@@ -258,7 +257,7 @@ impl LatinSolver {
                 let old_mask = self.get_cube_available(row, i);
                 let new_mask = old_mask & mask;
                 self.set_cube_available(row, i, new_mask);
-                
+
                 // updates result to true if old_mask is different from new_mask
                 result |= old_mask != new_mask;
             }
@@ -270,7 +269,7 @@ impl LatinSolver {
     // TODO MAYBE try not to call if row has no changes, cuz this looks sorta expensive
     fn cube_remove_candidate_col(&mut self, col: usize, n: usize, do_not_remove: Vec<usize>) -> bool {
         let mut result = false;
-        
+
         // This mask is all 1s except at the nth bit
         let mask: i32 = -(0b1 << (n-1)) - 1;
 
@@ -412,7 +411,7 @@ impl LatinSolver {
             for j in 0..self.order() {
                 let n = self.get_grid_value(i, j);
                 if n != 0 {
-                    result = self.cube_remove_candidate_row(i, n, vec![j]) |
+                    result |= self.cube_remove_candidate_row(i, n, vec![j]) |
                         self.cube_remove_candidate_col(j, n, vec![i]);
                 }
             }
@@ -463,7 +462,17 @@ impl LatinSolver {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
+    #[test]
+    fn test_place_digit() {
+        let mut ls = LatinSolver::new(6);
+        ls.place_digit(0, 1, 2);
+        assert_eq!(2, ls.get_grid_value(0, 1));
+        assert_eq!(0, ls.get_cube_available(0,0) & 0b000010);
+        // println!("{}", ls.grid_to_string());
+        // println!("{}", ls.cube_to_string());
+    }
+
     #[test]
     fn test_update_solved_grid_cells() {
         let mut ls = LatinSolver::new(6);
