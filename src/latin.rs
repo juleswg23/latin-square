@@ -249,39 +249,23 @@ impl LatinSolver {
     // Given a row, remove the candidate from all cells in cube except the locations provided in do_not_remove
     // TODO MAYBE try not to call if row has no changes, cuz this looks sorta expensive
     // Returns true if candidates were removed
-    fn cube_remove_candidate_row(&mut self, row: usize, n: usize, do_not_remove: &Vec<usize>) -> bool {
+    fn cube_remove_candidate(&mut self, axis_a: usize, n: usize, is_row: bool, do_not_remove: &Vec<usize>) -> bool {
+        assert_ne!(&Vec::<usize>::new(), do_not_remove, "cannot remove candidate from every position");
         let mut result = false;
 
         // This mask is all 1s except at the nth bit
         let mask: i32 = !(0b1 << (n-1));
 
-        for i in 0..self.order() {
-            if !do_not_remove.contains(&i) { // skip unless not in do not remove
-                let old_mask = self.get_cube_available(row, i);
+        for axis_b in 0..self.order() {
+            if !do_not_remove.contains(&axis_b) { // skip unless not in do not remove
+                let (row, col) = match is_row {
+                    true => (axis_a, axis_b),
+                    false => (axis_b, axis_a),
+                };
+                let old_mask = self.get_cube_available(row, col);
                 let new_mask = old_mask & mask;
-                self.set_cube_available(row, i, new_mask);
+                self.set_cube_available(row, col, new_mask);
 
-                // updates result to true if old_mask is different from new_mask
-                result |= old_mask != new_mask;
-            }
-        }
-        result
-    }
-
-    // Given a column, remove the candidate from all cells in cube except the locations provided in do_not_remove
-    // TODO MAYBE try not to call if row has no changes, cuz this looks sorta expensive
-    // Returns true if candidates were removed
-    fn cube_remove_candidate_col(&mut self, col: usize, n: usize, do_not_remove: &Vec<usize>) -> bool {
-        let mut result = false;
-
-        // This mask is all 1s except at the nth bit
-        let mask: i32 = !(0b1 << (n-1));
-
-        for i in 0..self.order() {
-            if !do_not_remove.contains(&i) { // skip unless not in do not remove
-                let old_mask = self.get_cube_available(i, col);
-                let new_mask = old_mask & mask;
-                self.set_cube_available(i, col, new_mask);
                 // updates result to true if old_mask is different from new_mask
                 result |= old_mask != new_mask;
             }
@@ -387,6 +371,8 @@ impl LatinSolver {
 
         for index in 0..self.cube().len() {
             let cell = self.cube[index];
+            println!("index {:?} and cell {:?}", index, cell);
+
             if cell == 0b0 {
                 panic!("Shouldn't ever return broken");
                 return SolvedStatus::Broken;
@@ -417,8 +403,8 @@ impl LatinSolver {
             for j in 0..self.order() {
                 let n = self.get_grid_value(i, j);
                 if n != 0 {
-                    result |= self.cube_remove_candidate_row(i, n, &vec![j]) |
-                        self.cube_remove_candidate_col(j, n, &vec![i]);
+                    result |= self.cube_remove_candidate(i, n, true, &vec![j]) |
+                        self.cube_remove_candidate(j, n, false, &vec![i]);
                 }
             }
         }
@@ -506,7 +492,7 @@ impl LatinSolver {
                             let do_not_remove = vec![col, *old_col];
                             for i in 0..self.order() {
                                 if 0b1 << i & available != 0 {
-                                    self.cube_remove_candidate_row(row, i + 1, &do_not_remove);
+                                    self.cube_remove_candidate(row, i + 1, true, &do_not_remove);
                                 }
                             }
                             result = true;
@@ -617,6 +603,18 @@ mod tests {
         assert!(ls.hidden_single());
         assert_eq!(1, ls.get_grid_value(1, 5));
         assert!(!ls.hidden_single());
+    }
+
+    #[test]
+    fn test_cube_remove_candidate() {
+        let mut ls = LatinSolver::new(6);
+        ls.cube_remove_candidate(3, 1, false, &vec![4, 5]);
+        assert_eq!(0b111110, ls.get_cube_available(0, 3));
+        assert_eq!(0b111111, ls.get_cube_available(5, 3));
+
+        ls.cube_remove_candidate(3, 2, true, &vec![4, 5]);
+        assert_eq!(0b111100, ls.get_cube_available(3, 3));
+        assert_eq!(0b111111, ls.get_cube_available(3, 4));
     }
 
     #[test]
