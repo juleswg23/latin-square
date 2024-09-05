@@ -481,25 +481,32 @@ impl LatinSolver {
     // can then be eliminated from the rest of the row and column.
     fn naked_pair(&mut self) -> bool {
         let mut result = false;
-        // for rows
-        for row in 0..self.order() {
-            let mut found: HashMap<i32, usize> = HashMap::new(); // map from availables to index
-            for col in 0..self.order() {
-                let available = self.get_cube_available(row, col);
-                if available.count_ones() == 2 {
-                    match found.get(&available) {
-                        Some(old_col) => {
-                            let do_not_remove = vec![col, *old_col];
-                            for i in 0..self.order() {
-                                if 0b1 << i & available != 0 {
-                                    self.cube_remove_candidate(row, i + 1, true, &do_not_remove);
+        for is_row in vec![true, false] {
+            // for rows
+            for axis_a in 0..self.order() {
+                let mut found: HashMap<i32, usize> = HashMap::new(); // map from availables to index
+                for axis_b in 0..self.order() {
+                    let (row, col) = match is_row {
+                        true => (axis_a, axis_b),
+                        false => (axis_b, axis_a),
+                    };
+                    
+                    let available = self.get_cube_available(row, col);
+                    if available.count_ones() == 2 {
+                        match found.get(&available) {
+                            Some(old_col) => {
+                                let do_not_remove = vec![col, *old_col];
+                                for i in 0..self.order() {
+                                    if 0b1 << i & available != 0 {
+                                        self.cube_remove_candidate(row, i + 1, is_row, &do_not_remove);
+                                    }
                                 }
-                            }
-                            result = true;
-                        },
-                        None => {
-                            found.insert(available, col);
-                        },
+                                result = true;
+                            },
+                            None => {
+                                found.insert(available, col);
+                            },
+                        }
                     }
                 }
             }
@@ -608,13 +615,15 @@ mod tests {
     #[test]
     fn test_cube_remove_candidate() {
         let mut ls = LatinSolver::new(6);
-        ls.cube_remove_candidate(3, 1, false, &vec![4, 5]);
+        assert!(ls.cube_remove_candidate(3, 1, false, &vec![4, 5]));
         assert_eq!(0b111110, ls.get_cube_available(0, 3));
         assert_eq!(0b111111, ls.get_cube_available(5, 3));
 
-        ls.cube_remove_candidate(3, 2, true, &vec![4, 5]);
+        assert!(ls.cube_remove_candidate(3, 2, true, &vec![4, 5]));
         assert_eq!(0b111100, ls.get_cube_available(3, 3));
         assert_eq!(0b111111, ls.get_cube_available(3, 4));
+        
+        assert!(!ls.cube_remove_candidate(5, 6, true, &vec![0, 1, 2, 3, 4, 5]));
     }
 
     #[test]
@@ -626,7 +635,7 @@ mod tests {
         ls.set_cube_available(1, 3, 0b001100); //pair
         ls.set_cube_available(1, 4, 0b111111);
         ls.set_cube_available(1, 5, 0b001100); //pair
-        ls.naked_pair();
+        assert!(ls.naked_pair());
         assert_eq!(0b110011, ls.get_cube_available(1, 0));
         assert_eq!(0b010000, ls.get_cube_available(1, 1));
     }
