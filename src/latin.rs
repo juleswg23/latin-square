@@ -8,7 +8,7 @@ use crate::math::math;
 
 /// Enum for the solver to track the status of completion
 #[derive(Debug, PartialEq)]
-enum SolvedStatus {
+pub enum SolvedStatus {
     Complete,
     Incomplete,
     Broken,
@@ -371,8 +371,6 @@ impl LatinSolver {
 
         for index in 0..self.cube().len() {
             let cell = self.cube[index];
-            println!("index {:?} and cell {:?}", index, cell);
-
             if cell == 0b0 {
                 panic!("Shouldn't ever return broken");
                 return SolvedStatus::Broken;
@@ -498,10 +496,11 @@ impl LatinSolver {
                                 let do_not_remove = vec![col, *old_col];
                                 for i in 0..self.order() {
                                     if 0b1 << i & available != 0 {
-                                        self.cube_remove_candidate(row, i + 1, is_row, &do_not_remove);
+                                        result |= self.cube_remove_candidate(row, i + 1, is_row, &do_not_remove);
                                     }
                                 }
-                                result = true;
+                                 // the problem is this is true when there are 2 remaining possibilities in the row. 
+                                                // So technically they form a naked pair, but they are not progressing the puzzle solve
                             },
                             None => {
                                 found.insert(available, col);
@@ -531,11 +530,30 @@ impl LatinSolver {
 
     }
 
-    pub fn stepped_logical_solver(&mut self) {
-        let mut old_cube = 0;
-        let mut current_cube = 1; // TODO choose how to represent cubes
-        while old_cube != current_cube {
-            // TODO call different logical functions to update
+    pub fn stepped_logical_solver(&mut self) -> SolvedStatus {
+        loop {
+            'simple_updates: loop {
+
+                match self.update_solved_grid_cells() {
+                    SolvedStatus::Complete => { return SolvedStatus::Complete; },
+                    SolvedStatus::Incomplete => (),
+                    SolvedStatus::Broken => { return SolvedStatus::Broken; }
+                }
+
+                match self.update_candidates() {
+                    true => (),
+                    false => break 'simple_updates,
+                }
+            }
+            
+            match self.hidden_single() {
+                true => continue,
+                false => (),
+            }
+            match self.naked_pair() {
+                true => continue,
+                false => {return SolvedStatus::Incomplete},
+            }
         }
     }
 }
@@ -639,4 +657,28 @@ mod tests {
         assert_eq!(0b110011, ls.get_cube_available(1, 0));
         assert_eq!(0b010000, ls.get_cube_available(1, 1));
     }
+    
+    #[test]
+    fn test_full_solve() {
+        let mut ls = LatinSolver::new(3);
+        ls.set_cube_available(0, 0, 0b110);
+        ls.set_cube_available(0, 1, 0b110);
+        ls.set_cube_available(0, 2, 0b111);
+        ls.set_cube_available(1, 0, 0b101);
+        ls.set_cube_available(1, 1, 0b111);
+        ls.set_cube_available(1, 2, 0b101);
+        ls.set_cube_available(2, 0, 0b111);
+        ls.set_cube_available(2, 1, 0b111);
+        ls.set_cube_available(2, 2, 0b111);
+
+        println!("{}", ls.cube_to_string());
+        println!("{}", ls.grid_to_string());
+        
+        println!("Solved status: {:?}", ls.stepped_logical_solver());
+
+        println!("{}", ls.cube_to_string());
+        println!("{}", ls.grid_to_string());
+        
+    }
+    
 }
