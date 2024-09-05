@@ -1,8 +1,6 @@
-#![allow(unused_imports)]
 #![allow(dead_code)]
 
 use itertools::Itertools;
-use std::cmp::Ordering;
 use std::collections::HashMap;
 use crate::math::math;
 
@@ -225,6 +223,30 @@ impl LatinSolver {
         result
     }
 
+    // Returns a vector where the mask at vec[i] are the locations that the digit i-1 is available
+    fn flip_cube_structure(set: &[i32]) -> Vec<i32> {
+        let mut result: Vec<i32> = vec![0b0; set.len()];
+        for (index, elem) in set.iter().enumerate() {
+            for bit in 0..set.len() {
+                if elem & (0b1 << bit) != 0 {
+                    result[bit] |= 0b1 << index;
+                }
+            }
+        }
+        result
+    }
+
+    // Returns the first instance of a naked single, specifically an optional on the index
+    fn check_naked_single(set: &[i32]) -> Option<usize> {
+        for (index, cell) in set.iter().enumerate() {
+            // if there is a single digit
+            if (cell & (cell - 1)) == 0 {
+                return Some(index);
+            }
+        }
+        None
+    }
+
     /************************** Brute force solving functions **************************/
     
     // Returns the location and vector of available digits at that location from the cube structure
@@ -361,6 +383,37 @@ impl LatinSolver {
         result
     }
 
+    fn hidden_single_alt(&mut self) -> bool {
+        let mut result = false;
+        for is_row in vec![true, false] {
+            for axis_a in 0..self.order() {
+                let axis_vec: Vec<i32> = match is_row {
+                    true => self.cube()[axis_a*self.order()..(axis_a+1)*self.order()].to_vec(),
+                    false => self.cube().iter().skip(axis_a).step_by(self.order()).copied().collect(),
+                };
+
+                let flipped_vec = LatinSolver::flip_cube_structure(&axis_vec);
+
+                result |= match LatinSolver::check_naked_single(&flipped_vec) {
+                    // MAYBE buggy since not returning
+                    Some(axis_b) => {
+                        let (i, j) = match is_row {
+                            true => (axis_a, axis_b),
+                            false => (axis_b, axis_a),
+                        };
+                        println!("flipped {:b}", flipped_vec[axis_b]);
+                        self.place_digit(i, j, (flipped_vec[axis_b] as f32).log2() as usize + 1);
+                        true
+                    },
+                    None => false,
+                }
+            }
+        }
+
+
+        result
+    }
+
     // If a candidate occurs once only in a row or column we can make it the solution to the cell.
     // returns true after the first one is found
     fn hidden_single(&mut self) -> bool {
@@ -451,8 +504,6 @@ impl LatinSolver {
                                         result |= self.cube_remove_candidate(row, i + 1, is_row, &do_not_remove);
                                     }
                                 }
-                                 // the problem is this is true when there are 2 remaining possibilities in the row.
-                                                // So technically they form a naked pair, but they are not progressing the puzzle solve
                             },
                             None => {
                                 found.insert(available, col);
@@ -580,6 +631,28 @@ mod tests {
         assert!(ls.hidden_single());
         assert_eq!(1, ls.get_grid_value(1, 5));
         assert!(!ls.hidden_single());
+
+        // column case
+        let mut ls = LatinSolver::new(6);
+        ls.set_cube_available(0, 1, 0b111111);
+        ls.set_cube_available(1, 1, 0b100100);
+        ls.set_cube_available(2, 1, 0b100100);
+        ls.set_cube_available(3, 1, 0b110111);
+        ls.set_cube_available(4, 1, 0b110001);
+        ls.set_cube_available(5, 1, 0b100001);
+        assert!(ls.hidden_single());
+        assert_eq!(4, ls.get_grid_value(0, 1));
+        assert!(!ls.get_cube_value(0, 3, 4));
+        assert!(ls.get_cube_value(0, 1, 4));
+        assert!(ls.hidden_single());
+        assert_eq!(2, ls.get_grid_value(3, 1));
+        assert!(!ls.get_cube_value(3, 3, 2));
+        assert!(ls.get_cube_value(3, 1, 2));
+        assert!(ls.hidden_single());
+        assert_eq!(5, ls.get_grid_value(4, 1));
+        assert!(ls.hidden_single());
+        assert_eq!(1, ls.get_grid_value(5, 1));
+        assert!(!ls.hidden_single());
     }
 
     #[test]
@@ -630,6 +703,17 @@ mod tests {
         println!("{}", ls.cube_to_string());
         println!("{}", ls.grid_to_string());
 
+    }
+
+    #[test]
+    fn test_playground() {
+        let mut ls = LatinSolver::new(4);
+        ls.set_cube_available(0, 0, 0b1101);
+        ls.set_cube_available(0, 1, 0b1110);
+        ls.set_cube_available(0, 2, 0b1101);
+        ls.set_cube_available(0, 3, 0b0101);
+
+        LatinSolver::flip_cube_structure(&ls.cube()[0..ls.order()]);
     }
 
 }
