@@ -21,11 +21,6 @@ pub struct LatinSolver {
 
     // might be useful to have grid appear elsewhere as its own type
     grid: Vec<usize>, // order^2
-
-    // row x, value n is represented by the nth bit of row[x], where n=1 is the smallest bit
-    // so 3 is placed in row x if row[x] & 0b100 == 0
-    row_candidates: Vec<i32>,   // order^1 of binary ints
-    col_candidates: Vec<i32>,   // order^1 of binary ints
 }
 
 impl LatinSolver {
@@ -36,9 +31,6 @@ impl LatinSolver {
             order,
             cube: vec![(0b1 << order) - 1; order.pow(2)], // 0 at bit k when k is not possible in that cell
             grid: vec![0; order.pow(2)], // The completed grid of values 1 through order, 0s before solved
-
-            row_candidates: vec![(0b1 << order) - 1; order.pow(2)], // 1 when the val is not yet present in row x
-            col_candidates: vec![(0b1 << order) - 1; order.pow(2)], // 1 when the val is not yet present in col y
         }
     }
 
@@ -54,14 +46,6 @@ impl LatinSolver {
 
     pub fn grid(&self) -> &Vec<usize> {
         &self.grid
-    }
-
-    pub fn row_candidates(&self) -> &Vec<i32> {
-        &self.row_candidates
-    }
-
-    pub fn col_candidates(&self) -> &Vec<i32> {
-        &self.col_candidates
     }
 
     // Get the location at coordinates (x,y)
@@ -181,35 +165,6 @@ impl LatinSolver {
         result
     }
 
-    /**************************** Row and column functions ****************************/
-
-    // Change the bit at n in row and col data structures to a 0 since we found the digit
-    fn found_row_col(&mut self, x: usize, y: usize, n: usize) -> () {
-        assert!(x < self.order() && y < self.order(), "x or y is out of bounds");
-        assert!(n > 0 && n <= self.order(), "n is out of bounds");
-
-        // This mask is 1 everywhere except for bit n
-        let mask: i32 = !(0b1 << (n-1));
-        self.row_candidates[x] &= mask;
-        self.col_candidates[y] &= mask;
-    }
-
-    // Change the bit at n in row and col data structures to a 1 since it is still a candidate
-    fn unfound_row_col(&mut self, x: usize, y: usize, n: usize) -> () {
-        assert!(x < self.order() && y < self.order(), "x or y is out of bounds");
-        assert!(n > 0 && n <= self.order(), "n is out of bounds");
-
-        // This mask is 0 everywhere except for bit n
-        let mask: i32 = 0b1 << (n-1);
-        self.row_candidates[x] |= mask;
-        self.col_candidates[y] |= mask;
-    }
-
-    fn row_col_to_string(&self) -> String {
-        // TODO implement
-        String::from("")
-    }
-
     /************************** Solving functions **************************/
 
     // Place a digit in the final grid,
@@ -240,9 +195,6 @@ impl LatinSolver {
                 self.set_cube_value(x, y, i, false);
             }
         }
-        // Update row and col data structures
-        self.found_row_col(x, y, n);
-
         old_data
     }
 
@@ -488,7 +440,7 @@ impl LatinSolver {
                         true => (axis_a, axis_b),
                         false => (axis_b, axis_a),
                     };
-                    
+
                     let available = self.get_cube_available(row, col);
                     if available.count_ones() == 2 {
                         match found.get(&available) {
@@ -499,7 +451,7 @@ impl LatinSolver {
                                         result |= self.cube_remove_candidate(row, i + 1, is_row, &do_not_remove);
                                     }
                                 }
-                                 // the problem is this is true when there are 2 remaining possibilities in the row. 
+                                 // the problem is this is true when there are 2 remaining possibilities in the row.
                                                 // So technically they form a naked pair, but they are not progressing the puzzle solve
                             },
                             None => {
@@ -545,7 +497,7 @@ impl LatinSolver {
                     false => break 'simple_updates,
                 }
             }
-            
+
             match self.hidden_single() {
                 true => continue,
                 false => (),
@@ -640,7 +592,7 @@ mod tests {
         assert!(ls.cube_remove_candidate(3, 2, true, &vec![4, 5]));
         assert_eq!(0b111100, ls.get_cube_available(3, 3));
         assert_eq!(0b111111, ls.get_cube_available(3, 4));
-        
+
         assert!(!ls.cube_remove_candidate(5, 6, true, &vec![0, 1, 2, 3, 4, 5]));
     }
 
@@ -657,7 +609,7 @@ mod tests {
         assert_eq!(0b110011, ls.get_cube_available(1, 0));
         assert_eq!(0b010000, ls.get_cube_available(1, 1));
     }
-    
+
     #[test]
     fn test_full_solve() {
         let mut ls = LatinSolver::new(3);
@@ -671,14 +623,13 @@ mod tests {
         ls.set_cube_available(2, 1, 0b111);
         ls.set_cube_available(2, 2, 0b111);
 
-        println!("{}", ls.cube_to_string());
-        println!("{}", ls.grid_to_string());
-        
-        println!("Solved status: {:?}", ls.stepped_logical_solver());
+        assert_eq!(SolvedStatus::Complete, ls.stepped_logical_solver());
+        assert_eq!(3, ls.get_grid_value(2, 0));
 
+        assert!(ls.check_solved());
         println!("{}", ls.cube_to_string());
         println!("{}", ls.grid_to_string());
-        
+
     }
-    
+
 }
