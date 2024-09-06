@@ -86,6 +86,7 @@ impl LatinSolver {
         self.cube[location] = available;
     }
     
+    // Returns a vector of a row or column from the cube (a copy)
     fn get_cube_vector(&self, index: usize, is_row: bool) -> Vec<i32> {
         match is_row {
             // Take a row slice
@@ -211,12 +212,13 @@ impl LatinSolver {
     // Given a row, remove the candidate from all cells in cube except the locations provided in do_not_remove
     // TODO MAYBE try not to call if row has no changes, cuz this looks sorta expensive
     // Returns true if candidates were removed
-    fn cube_remove_candidate(&mut self, axis_a: usize, n: usize, is_row: bool, do_not_remove: &Vec<usize>) -> bool {
+    fn cube_remove_candidate(&mut self, axis_a: usize, digit_mask: i32, is_row: bool, do_not_remove: &Vec<usize>) -> bool {
         assert_ne!(&Vec::<usize>::new(), do_not_remove, "cannot remove candidate from every position");
+        assert_ne!(0b0, digit_mask, "Cannot remove no digit");
+        assert_ne!(0b0, !digit_mask, "Cannot remove all digits");
         let mut result = false;
 
-        // This mask is all 1s except at the nth bit
-        let mask: i32 = !(0b1 << (n-1));
+        // digit mask is 1 at position n-1 for the digit n's we want to remove.
 
         for axis_b in 0..self.order() {
             if !do_not_remove.contains(&axis_b) { // skip unless not in do not remove
@@ -225,7 +227,7 @@ impl LatinSolver {
                     false => (axis_b, axis_a),
                 };
                 let old_mask = *self.get_cube_available(row, col);
-                let new_mask = old_mask & mask;
+                let new_mask = old_mask & !digit_mask;
                 self.set_cube_available(row, col, new_mask);
 
                 // updates result to true if old_mask is different from new_mask
@@ -249,7 +251,7 @@ impl LatinSolver {
     }
 
     // Returns the first instance of a naked single, specifically an optional of the index and row
-    fn check_naked_single(set: &[i32]) -> Option<(usize, &i32)> {
+    fn naked_single_finder(set: &[i32]) -> Option<(usize, &i32)> {
         for (index, cell) in set.iter().enumerate() {
             // if there is a single digit
             if cell != &0b0 && (cell & (cell - 1)) == 0 {
@@ -259,13 +261,13 @@ impl LatinSolver {
         None
     }
     
-    fn naked_pair_alt(set: &[i32])-> Option<(Vec<usize>, &i32)> {
+    fn naked_pair_finder(set: &[i32])-> Option<(Vec<usize>, &i32)> {
         let mut found: HashMap<i32, usize> = HashMap::new(); // map from availables to index
         for (index, cell) in set.iter().enumerate() {
             if cell.count_ones() == 2 {
                 match found.get(&cell) {
-                    Some(old_col) => {
-                        return Some((vec![index, *old_col], cell));
+                    Some(old_index) => {
+                        return Some((vec![index, *old_index], cell));
                     },
                     None => {
                         found.insert(*cell, index);
@@ -417,8 +419,9 @@ impl LatinSolver {
             for j in 0..self.order() {
                 let n = self.get_grid_value(i, j);
                 if n != 0 {
-                    result |= self.cube_remove_candidate(i, n, true, &vec![j]) |
-                        self.cube_remove_candidate(j, n, false, &vec![i]);
+                    let digit_mask = 0b1 << n-1;
+                    result |= self.cube_remove_candidate(i, digit_mask, true, &vec![j]) |
+                        self.cube_remove_candidate(j, digit_mask, false, &vec![i]);
                 }
             }
         }
@@ -437,19 +440,19 @@ impl LatinSolver {
                 let axis_vec = self.get_cube_vector(axis_a, is_row);
 
                 // Pre-process before flipping to ensure that we ignore naked singles
-                let mut preprocessed: Vec<i32> = vec![];
+                let mut pre_processed: Vec<i32> = vec![];
                 for entry in axis_vec {
                     if entry & (entry - 1) == 0 {
-                        preprocessed.push(0b0);
+                        pre_processed.push(0b0);
                     } else {
-                        preprocessed.push(entry);
+                        pre_processed.push(entry);
                     }
                 }
 
                 // Flip the vector because hidden single and naked single are inverses
-                let flipped_vec = LatinSolver::flip_cube_structure(&preprocessed);
+                let flipped_vec = LatinSolver::flip_cube_structure(&pre_processed);
 
-                result |= match LatinSolver::check_naked_single(&flipped_vec) {
+                result |= match LatinSolver::naked_single_finder(&flipped_vec) {
                     Some((digit, cell)) => {
 
                         let axis_b= (flipped_vec[digit] as f32).log2() as usize;
@@ -466,7 +469,10 @@ impl LatinSolver {
         }
         result
     }
-    
+
+    // We check for 'naked' pairs. For example, if we have two pairs, e.g. 3-4 and 3-4 in the same
+    // row or column, then both 3 and 4 must occupy those squares (in what ever order). 3 and 4
+    // can then be eliminated from the rest of the row and column.
     fn naked_pair(&mut self) -> bool {
         let mut result = false;
         for is_row in vec![true, false] {
@@ -475,11 +481,11 @@ impl LatinSolver {
                 // A vector of just the row or column (axis) candidates
                 let axis_vec = self.get_cube_vector(axis_a, is_row);
 
-                result |= match LatinSolver::naked_pair_alt(&axis_vec) {
+                result |= match LatinSolver::naked_pair_finder(&axis_vec) {
                     Some((indices, available)) => {
                         for i in 0..self.order() {
                             if (0b1 << i) & available != 0 {
-                                result |= self.cube_remove_candidate(axis_a, i + 1, is_row, &indices);
+                                result |= self.cube_remove_candidate(axis_a,0b1 << i, is_row, &indices);
                             }
                         }
                         true
@@ -491,49 +497,49 @@ impl LatinSolver {
         result
     }
 
-    // TODO re-write naked pair to use generic "naked" function
-    // We check for 'naked' pairs. For example, if we have two pairs, e.g. 3-4 and 3-4 in the same
-    // row or column, then both 3 and 4 must occupy those squares (in what ever order). 3 and 4
-    // can then be eliminated from the rest of the row and column.
-    fn naked_pair_3(&mut self) -> bool {
-        let mut result = false;
-        for is_row in vec![true, false] {
-            // for rows
-            for axis_a in 0..self.order() {
-                let mut found: HashMap<i32, usize> = HashMap::new(); // map from availables to index
-                for axis_b in 0..self.order() {
-                    let (row, col) = match is_row {
-                        true => (axis_a, axis_b),
-                        false => (axis_b, axis_a),
-                    };
-
-                    let available = *self.get_cube_available(row, col);
-                    if available.count_ones() == 2 {
-                        match found.get(&available) {
-                            Some(old_col) => {
-                                let do_not_remove = vec![col, *old_col];
-                                for i in 0..self.order() {
-                                    if 0b1 << i & available != 0 {
-                                        result |= self.cube_remove_candidate(row, i + 1, is_row, &do_not_remove);
-                                    }
-                                }
-                            },
-                            None => {
-                                found.insert(available, col);
-                            },
-                        }
-                    }
-                }
-            }
-        }
-        result
-    }
-
     // If two candidates occur only twice in a row or column we can make then a naked pair, and call
     // that function to eliminate candidates from the row/col.
-    fn hidden_pair(&mut self) -> () {
-
-    }
+    // fn hidden_pair(&mut self) -> () {
+    //     let mut result = false;
+    //     for is_row in vec![true, false] {
+    //         for axis_a in 0..self.order() {
+    // 
+    //             // A vector of just the row or column (axis) candidates
+    //             let axis_vec = self.get_cube_vector(axis_a, is_row);
+    // 
+    //             // Pre-process before flipping to ensure that we ignore naked singles
+    //             let mut pre_processed: Vec<i32> = vec![];
+    //             for entry in axis_vec {
+    //                 if entry & (entry - 1) == 0 {
+    //                     pre_processed.push(0b0);
+    //                 } else {
+    //                     pre_processed.push(entry);
+    //                 }
+    //             }
+    // 
+    //             // Flip the vector because hidden single and naked single are inverses
+    //             let flipped_vec = LatinSolver::flip_cube_structure(&pre_processed);
+    // 
+    //             result |= match LatinSolver::naked_pair_finder(&flipped_vec) {
+    //                 Some((digits, cell)) => {
+    //                     let mut axis_b: Vec<usize> = vec![];
+    //                     for d in digits {
+    //                         axis_b.push((flipped_vec[d] as f32).log2() as usize);
+    //                     }
+    // 
+    //                     for i in 0..self.order() {
+    //                         if (0b1 << i) & available != 0 {
+    //                             result |= self.cube_remove_candidate(axis_a, i + 1, is_row, &indices);
+    //                         }
+    //                     }
+    //                     true
+    //                 },
+    //                 None => false,
+    //             }
+    //         }
+    //     }
+    //     result
+    // }
 
     // We check for 'naked' triples and eliminate candidates seen by them
     fn naked_triple(&mut self) -> () {
@@ -671,7 +677,7 @@ mod tests {
     #[test]
     fn test_cube_remove_candidate() {
         let mut ls = LatinSolver::new(6);
-        assert!(ls.cube_remove_candidate(3, 1, false, &vec![4, 5]));
+        assert!(ls.cube_remove_candidate(3, 0b1 << 0, false, &vec![4, 5]));
         assert_eq!(0b111110, *ls.get_cube_available(0, 3));
         assert_eq!(0b111111, *ls.get_cube_available(5, 3));
 
