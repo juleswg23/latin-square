@@ -75,8 +75,8 @@ impl LatinSolver {
     }
 
     // Get the cube data structure representing available digits at (x, y)
-    pub fn get_cube_available(&self, x: usize, y: usize) -> i32 {
-        self.cube[self.get_loc(x, y)]
+    pub fn get_cube_available(&self, x: usize, y: usize) -> &i32 {
+        &self.cube[self.get_loc(x, y)]
     }
 
     // Update a subarray at a particular position with pruned (or expanded) choices of available digits
@@ -212,7 +212,7 @@ impl LatinSolver {
                     true => (axis_a, axis_b),
                     false => (axis_b, axis_a),
                 };
-                let old_mask = self.get_cube_available(row, col);
+                let old_mask = *self.get_cube_available(row, col);
                 let new_mask = old_mask & mask;
                 self.set_cube_available(row, col, new_mask);
 
@@ -236,6 +236,7 @@ impl LatinSolver {
         result
     }
 
+    // TODO make a generic naked function
     // Returns the first instance of a naked single, specifically an optional of the index and row
     fn check_naked_single(set: &[i32]) -> Option<(usize, &i32)> {
         for (index, cell) in set.iter().enumerate() {
@@ -243,6 +244,18 @@ impl LatinSolver {
             if cell != &0b0 && (cell & (cell - 1)) == 0 {
                 return Some((index, cell));
             }
+        }
+        None
+    }
+
+    fn naked_set(set: &[i32], set_size: u32) -> Option<(usize, &i32)> {
+        for (index, cell) in set.iter().enumerate() {
+            // if there is a single digit
+            if cell.count_ones() == set_size {
+                return Some((index, cell));
+            }
+            
+            
         }
         None
     }
@@ -339,6 +352,7 @@ impl LatinSolver {
     /********************** sudokuwiki Solving functions **********************/
 
     // Check for solved cells in cube structure (cells with only one candidate remaining) and update grid
+    // Equivalent to a naked single.
     // Returns problem status if the whole puzzle is solved, incomplete, or broken. // TODO maybe some other true?
     fn update_solved_grid_cells(&mut self) -> SolvedStatus {
         let mut outcome = SolvedStatus::Complete;
@@ -365,7 +379,6 @@ impl LatinSolver {
 
     // For each unknown cell we eliminate all candidates where the digit is known in the row or
     // column. This may reveal a single candidate, in which case we have a solution for that cell.
-    // Equivalent to a naked single.
     // NOTE will not update the grid, only the cube (candidates) data structure
     //
     // Returns true if candidates were successfully removed
@@ -383,18 +396,26 @@ impl LatinSolver {
         result
     }
 
+    // If a candidate occurs once only in a row or column we can make it the solution to the cell.
+    // Returns true if at least one hidden single is found.
+    // This function can find multiple hidden singles at once if they are in different rows/columns.
     fn hidden_single(&mut self) -> bool {
         let mut result = false;
         for is_row in vec![true, false] {
             for axis_a in 0..self.order() {
+
+                // A vector of just the row or column (axis) candidates
                 let axis_vec: Vec<i32> = match is_row {
+                    // Take a row slice
                     true => self.cube()[axis_a*self.order()..(axis_a+1)*self.order()].to_vec(),
+                    // Take every nth element, since we are in a flattened 2d vector
                     false => self.cube().iter()
                         .skip(axis_a)
                         .step_by(self.order())
                         .copied().collect(),
                 };
-                
+
+                // Pre-process before flipping to ensure that we ignore naked singles
                 let mut preprocessed: Vec<i32> = vec![];
                 for entry in axis_vec {
                     if entry & (entry - 1) == 0 {
@@ -404,17 +425,17 @@ impl LatinSolver {
                     }
                 }
 
+                // Flip the vector because hidden single and naked single are inverses
                 let flipped_vec = LatinSolver::flip_cube_structure(&preprocessed);
 
                 result |= match LatinSolver::check_naked_single(&flipped_vec) {
-                    // TODO Bug is that it will find a hidden single that has already been added to the grid.
                     Some((digit, cell)) => {
+
                         let axis_b= (flipped_vec[digit] as f32).log2() as usize;
                         let (i, j) = match is_row {
                             true => (axis_a, axis_b),
                             false => (axis_b, axis_a),
                         };
-                        //println!("flipped {:b}", flipped_vec[axis_b]);
                         self.place_digit(i, j, digit + 1);
                         true
                     },
@@ -422,76 +443,10 @@ impl LatinSolver {
                 }
             }
         }
-
-
         result
     }
 
-    // If a candidate occurs once only in a row or column we can make it the solution to the cell.
-    // returns true after the first one is found
-    fn hidden_single_alt(&mut self) -> bool {
-        for i in 0..self.order() {
-            let mut row_count: Vec<usize> = vec![0; self.order()]; // the 0th element represents the digit 1
-            let mut col_count: Vec<usize> = vec![0; self.order()];
-
-            // get the counts for digit n in row i and col i respectively
-            for j in 0..self.order() {
-                for n in 1..=self.order() {
-                    if self.get_cube_value(i, j, n) {
-                        row_count[n - 1] += 1;
-                    }
-                    if self.get_cube_value(j, i, n) {
-                        col_count[n - 1] += 1;
-                    }
-                }
-                // check if value has been placed in row or col
-                // if it has, ensure we won't find a hidden single here
-                if self.get_grid_value(i, j) != 0 {
-                    row_count[self.get_grid_value(i, j) - 1] += 1;
-                }
-                if self.get_grid_value(j, i) != 0 {
-                    col_count[self.get_grid_value(j, i) - 1] += 1;
-                }
-            }
-
-            // check if any have a count of 1
-            // if yes, find the cell with that as an available
-            if helper_update_grid(self, i, &mut row_count, true) {
-                return true;
-            }
-            if helper_update_grid(self, i, &mut col_count, false) {
-                return true;
-            }
-        }
-
-        // helper function to update the grid in case of 1 in the count
-        fn helper_update_grid(this: &mut LatinSolver, i: usize, count: &mut Vec<usize>, check_row: bool) -> bool {
-            for (index, elem) in count.iter().enumerate() {
-                if *elem == 1 {
-                    let mask = 0b1 << index;
-                    for j in 0..this.order() {
-                        // flip row and col depending on check_row, so we don't have to rewrite code
-                        if check_row {
-                            if this.get_cube_available(i, j) & mask != 0 {
-                                this.place_digit(i, j, index + 1);
-                                return true;
-                            }
-                        } else {
-                            if this.get_cube_available(j, i) & mask != 0 {
-                                this.place_digit(j, i, index + 1);
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-            false
-        }
-
-        false
-    }
-
-
+    // TODO re-write naked pair to use generic "naked" function
     // We check for 'naked' pairs. For example, if we have two pairs, e.g. 3-4 and 3-4 in the same
     // row or column, then both 3 and 4 must occupy those squares (in what ever order). 3 and 4
     // can then be eliminated from the rest of the row and column.
@@ -507,7 +462,7 @@ impl LatinSolver {
                         false => (axis_b, axis_a),
                     };
 
-                    let available = self.get_cube_available(row, col);
+                    let available = *self.get_cube_available(row, col);
                     if available.count_ones() == 2 {
                         match found.get(&available) {
                             Some(old_col) => {
@@ -613,11 +568,11 @@ mod tests {
 
         assert_eq!(SolvedStatus::Incomplete, ls.update_solved_grid_cells());
         assert_eq!(true, ls.update_candidates());
-        assert_eq!(0b010000, ls.get_cube_available(2, 3));
-        assert_eq!(0b010111, ls.get_cube_available(4, 3));
+        assert_eq!(0b010000, *ls.get_cube_available(2, 3));
+        assert_eq!(0b010111, *ls.get_cube_available(4, 3));
         ls.update_solved_grid_cells();
         assert_eq!(true, ls.update_candidates());
-        assert_eq!(0b000111, ls.get_cube_available(4, 3));
+        assert_eq!(0b000111, *ls.get_cube_available(4, 3));
         ls.update_solved_grid_cells();
         assert_eq!(false, ls.update_candidates());
     }
@@ -672,12 +627,12 @@ mod tests {
     fn test_cube_remove_candidate() {
         let mut ls = LatinSolver::new(6);
         assert!(ls.cube_remove_candidate(3, 1, false, &vec![4, 5]));
-        assert_eq!(0b111110, ls.get_cube_available(0, 3));
-        assert_eq!(0b111111, ls.get_cube_available(5, 3));
+        assert_eq!(0b111110, *ls.get_cube_available(0, 3));
+        assert_eq!(0b111111, *ls.get_cube_available(5, 3));
 
         assert!(ls.cube_remove_candidate(3, 2, true, &vec![4, 5]));
-        assert_eq!(0b111100, ls.get_cube_available(3, 3));
-        assert_eq!(0b111111, ls.get_cube_available(3, 4));
+        assert_eq!(0b111100, *ls.get_cube_available(3, 3));
+        assert_eq!(0b111111, *ls.get_cube_available(3, 4));
 
         assert!(!ls.cube_remove_candidate(5, 6, true, &vec![0, 1, 2, 3, 4, 5]));
     }
@@ -692,8 +647,8 @@ mod tests {
         ls.set_cube_available(1, 4, 0b111111);
         ls.set_cube_available(1, 5, 0b001100); //pair
         assert!(ls.naked_pair());
-        assert_eq!(0b110011, ls.get_cube_available(1, 0));
-        assert_eq!(0b010000, ls.get_cube_available(1, 1));
+        assert_eq!(0b110011, *ls.get_cube_available(1, 0));
+        assert_eq!(0b010000, *ls.get_cube_available(1, 1));
     }
 
     #[test]
