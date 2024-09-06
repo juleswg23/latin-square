@@ -236,12 +236,12 @@ impl LatinSolver {
         result
     }
 
-    // Returns the first instance of a naked single, specifically an optional on the index
-    fn check_naked_single(set: &[i32]) -> Option<usize> {
+    // Returns the first instance of a naked single, specifically an optional of the index and row
+    fn check_naked_single(set: &[i32]) -> Option<(usize, &i32)> {
         for (index, cell) in set.iter().enumerate() {
             // if there is a single digit
-            if (cell & (cell - 1)) == 0 {
-                return Some(index);
+            if cell != &0b0 && (cell & (cell - 1)) == 0 {
+                return Some((index, cell));
             }
         }
         None
@@ -383,26 +383,39 @@ impl LatinSolver {
         result
     }
 
-    fn hidden_single_alt(&mut self) -> bool {
+    fn hidden_single(&mut self) -> bool {
         let mut result = false;
         for is_row in vec![true, false] {
             for axis_a in 0..self.order() {
                 let axis_vec: Vec<i32> = match is_row {
                     true => self.cube()[axis_a*self.order()..(axis_a+1)*self.order()].to_vec(),
-                    false => self.cube().iter().skip(axis_a).step_by(self.order()).copied().collect(),
+                    false => self.cube().iter()
+                        .skip(axis_a)
+                        .step_by(self.order())
+                        .copied().collect(),
                 };
+                
+                let mut preprocessed: Vec<i32> = vec![];
+                for entry in axis_vec {
+                    if entry & (entry - 1) == 0 {
+                        preprocessed.push(0b0);
+                    } else {
+                        preprocessed.push(entry);
+                    }
+                }
 
-                let flipped_vec = LatinSolver::flip_cube_structure(&axis_vec);
+                let flipped_vec = LatinSolver::flip_cube_structure(&preprocessed);
 
                 result |= match LatinSolver::check_naked_single(&flipped_vec) {
-                    // MAYBE buggy since not returning
-                    Some(axis_b) => {
+                    // TODO Bug is that it will find a hidden single that has already been added to the grid.
+                    Some((digit, cell)) => {
+                        let axis_b= (flipped_vec[digit] as f32).log2() as usize;
                         let (i, j) = match is_row {
                             true => (axis_a, axis_b),
                             false => (axis_b, axis_a),
                         };
-                        println!("flipped {:b}", flipped_vec[axis_b]);
-                        self.place_digit(i, j, (flipped_vec[axis_b] as f32).log2() as usize + 1);
+                        //println!("flipped {:b}", flipped_vec[axis_b]);
+                        self.place_digit(i, j, digit + 1);
                         true
                     },
                     None => false,
@@ -416,7 +429,7 @@ impl LatinSolver {
 
     // If a candidate occurs once only in a row or column we can make it the solution to the cell.
     // returns true after the first one is found
-    fn hidden_single(&mut self) -> bool {
+    fn hidden_single_alt(&mut self) -> bool {
         for i in 0..self.order() {
             let mut row_count: Vec<usize> = vec![0; self.order()]; // the 0th element represents the digit 1
             let mut col_count: Vec<usize> = vec![0; self.order()];
@@ -700,8 +713,8 @@ mod tests {
         assert_eq!(3, ls.get_grid_value(2, 0));
 
         assert!(ls.check_solved());
-        println!("{}", ls.cube_to_string());
-        println!("{}", ls.grid_to_string());
+        // println!("{}", ls.cube_to_string());
+        // println!("{}", ls.grid_to_string());
 
     }
 
