@@ -85,7 +85,7 @@ impl LatinSolver {
         let location = self.get_loc(x, y);
         self.cube[location] = available;
     }
-    
+
     // Returns a vector of a row or column from the cube (a copy)
     fn get_cube_vector(&self, index: usize, is_row: bool) -> Vec<i32> {
         match is_row {
@@ -180,9 +180,7 @@ impl LatinSolver {
 
     // Place a digit in the final grid,
     // and update the data structures storing the availability of digits
-    pub fn place_digit(&mut self, x: usize, y: usize, n: usize) -> (Vec<usize>, Vec<i32>) {
-        let old_data: (Vec<usize>, Vec<i32>) = (self.grid.clone(), self.cube.clone());
-
+    pub fn place_digit_xy(&mut self, x: usize, y: usize, n: usize) -> () {
         // place it in the grid structure
         self.set_grid_value(x, y, n);
 
@@ -206,7 +204,18 @@ impl LatinSolver {
                 self.set_cube_value(x, y, i, false);
             }
         }
+        //old_data
+    }
+    
+    pub fn place_digit_xy_deepcopy(&mut self, x: usize, y: usize, n: usize) -> (Vec<usize>, Vec<i32>) {
+        let old_data: (Vec<usize>, Vec<i32>) = (self.grid.clone(), self.cube.clone());
+        self.place_digit_xy(x, y, n);
         old_data
+    }
+
+    pub fn place_digit_flat(&mut self, flat_index: usize, n: usize) -> () {
+        let (x, y) = math::xy_pair(flat_index, self.order());
+        self.place_digit_xy(x, y, n)
     }
 
     // Given a row, remove the candidate from all cells in cube except the locations provided in do_not_remove
@@ -236,6 +245,8 @@ impl LatinSolver {
         }
         result
     }
+
+    /******************************** Static functions ********************************/
 
     // Returns a vector where the mask at vec[i] are the locations that the digit i-1 is available
     fn flip_cube_structure(set: &[i32]) -> Vec<i32> {
@@ -318,7 +329,7 @@ impl LatinSolver {
                 } else if available_digits.len() == 1 {
                     if self.get_grid_value(i, j) == 0 {
                         // This might cause problems of version/clone
-                        self.place_digit(i, j, available_digits[0]);
+                        self.place_digit_xy(i, j, available_digits[0]);
                     }
                 } else {
                     // Should only happen when some location has no possibilities
@@ -350,7 +361,7 @@ impl LatinSolver {
                 }
 
                 // Solve and then restore data structures from before said solve
-                let (prev_grid, prev_cube) = self.place_digit(x, y, n);
+                let (prev_grid, prev_cube) = self.place_digit_xy_deepcopy(x, y, n);
                 self.recursive_solve(count, deep);
                 self.cube = prev_cube;
                 self.grid = prev_grid;
@@ -456,11 +467,11 @@ impl LatinSolver {
                     Some((digit, cell)) => {
 
                         let axis_b= (flipped_vec[digit] as f32).log2() as usize;
-                        let (i, j) = match is_row {
-                            true => (axis_a, axis_b),
-                            false => (axis_b, axis_a),
+                        match is_row {
+                            true => self.place_digit_xy(axis_a, axis_b, digit + 1),
+                            false => self.place_digit_xy(axis_b, axis_a, digit + 1),
                         };
-                        self.place_digit(i, j, digit + 1);
+                        
                         true
                     },
                     None => false,
@@ -499,7 +510,7 @@ impl LatinSolver {
 
     // If two candidates occur only twice in a row or column we can make then a naked pair, and call
     // that function to eliminate candidates from the row/col.
-    // fn hidden_pair(&mut self) -> () {
+    // fn hidden_pair(&mut self) -> bool {
     //     let mut result = false;
     //     for is_row in vec![true, false] {
     //         for axis_a in 0..self.order() {
@@ -587,7 +598,7 @@ mod tests {
     #[test]
     fn test_place_digit() {
         let mut ls = LatinSolver::new(6);
-        ls.place_digit(0, 1, 2);
+        ls.place_digit_xy(0, 1, 2);
         assert_eq!(2, ls.get_grid_value(0, 1));
         assert_eq!(0, ls.get_cube_available(0,0) & 0b000010);
         // println!("{}", ls.grid_to_string());

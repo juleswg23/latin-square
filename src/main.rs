@@ -17,9 +17,9 @@ fn main() {
     // println!("{}", ls.get_cube_value(3, 3, 2));
     // println!("{}", ls.get_grid_value(3, 3));
 
-    ls.place_digit(3, 3, 3);
-    ls.place_digit(1, 3, 2);
-    ls.place_digit(0, 0, 2);
+    ls.place_digit_xy(3, 3, 3);
+    ls.place_digit_xy(1, 3, 2);
+    ls.place_digit_xy(0, 0, 2);
 
     // println!("{}", ls.get_cube_value(3, 3, 2));
     // println!("{}", ls.get_cube_value(3, 3, 3));
@@ -55,8 +55,8 @@ mod tests {
         // println!("{}", ls.get_cube_value(3, 3, 2));
         // println!("{}", ls.get_grid_value(3, 3));
 
-        ls.place_digit(0, 1, 3);
-        ls.place_digit(0, 0, 1);
+        ls.place_digit_xy(0, 1, 3);
+        ls.place_digit_xy(0, 0, 1);
 
         // println!("{}", ls.get_cube_value(3, 3, 2));
         // println!("{}", ls.get_cube_value(3, 3, 3));
