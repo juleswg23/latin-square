@@ -85,6 +85,18 @@ impl LatinSolver {
         let location = self.get_loc(x, y);
         self.cube[location] = available;
     }
+    
+    fn get_cube_vector(&self, index: usize, is_row: bool) -> Vec<i32> {
+        match is_row {
+            // Take a row slice
+            true => self.cube()[index*self.order()..(index+1)*self.order()].to_vec(),
+            // Take every nth element, since we are in a flattened 2d vector
+            false => self.cube().iter()
+                .skip(index)
+                .step_by(self.order())
+                .copied().collect(),
+        }
+    }
 
     // To_String method for the cube data structure
     pub fn cube_to_string(&self) -> String {
@@ -236,7 +248,6 @@ impl LatinSolver {
         result
     }
 
-    // TODO make a generic naked function
     // Returns the first instance of a naked single, specifically an optional of the index and row
     fn check_naked_single(set: &[i32]) -> Option<(usize, &i32)> {
         for (index, cell) in set.iter().enumerate() {
@@ -247,8 +258,26 @@ impl LatinSolver {
         }
         None
     }
+    
+    fn naked_pair_alt(set: &[i32])-> Option<(Vec<usize>, &i32)> {
+        let mut found: HashMap<i32, usize> = HashMap::new(); // map from availables to index
+        for (index, cell) in set.iter().enumerate() {
+            if cell.count_ones() == 2 {
+                match found.get(&cell) {
+                    Some(old_col) => {
+                        return Some((vec![index, *old_col], cell));
+                    },
+                    None => {
+                        found.insert(*cell, index);
+                    },
+                }
+            }
+        }
+        None
+    }
 
-    fn naked_set(set: &[i32], set_size: u32) -> Option<(usize, &i32)> {
+    // TODO
+    fn naked_set(set: &[i32], set_size: u32, ) -> Option<(usize, &i32)> {
         for (index, cell) in set.iter().enumerate() {
             // if there is a single digit
             if cell.count_ones() == set_size {
@@ -405,15 +434,7 @@ impl LatinSolver {
             for axis_a in 0..self.order() {
 
                 // A vector of just the row or column (axis) candidates
-                let axis_vec: Vec<i32> = match is_row {
-                    // Take a row slice
-                    true => self.cube()[axis_a*self.order()..(axis_a+1)*self.order()].to_vec(),
-                    // Take every nth element, since we are in a flattened 2d vector
-                    false => self.cube().iter()
-                        .skip(axis_a)
-                        .step_by(self.order())
-                        .copied().collect(),
-                };
+                let axis_vec = self.get_cube_vector(axis_a, is_row);
 
                 // Pre-process before flipping to ensure that we ignore naked singles
                 let mut preprocessed: Vec<i32> = vec![];
@@ -445,12 +466,36 @@ impl LatinSolver {
         }
         result
     }
+    
+    fn naked_pair(&mut self) -> bool {
+        let mut result = false;
+        for is_row in vec![true, false] {
+            for axis_a in 0..self.order() {
+
+                // A vector of just the row or column (axis) candidates
+                let axis_vec = self.get_cube_vector(axis_a, is_row);
+
+                result |= match LatinSolver::naked_pair_alt(&axis_vec) {
+                    Some((indices, available)) => {
+                        for i in 0..self.order() {
+                            if (0b1 << i) & available != 0 {
+                                result |= self.cube_remove_candidate(axis_a, i + 1, is_row, &indices);
+                            }
+                        }
+                        true
+                    },
+                    None => false,
+                }
+            }
+        }
+        result
+    }
 
     // TODO re-write naked pair to use generic "naked" function
     // We check for 'naked' pairs. For example, if we have two pairs, e.g. 3-4 and 3-4 in the same
     // row or column, then both 3 and 4 must occupy those squares (in what ever order). 3 and 4
     // can then be eliminated from the rest of the row and column.
-    fn naked_pair(&mut self) -> bool {
+    fn naked_pair_3(&mut self) -> bool {
         let mut result = false;
         for is_row in vec![true, false] {
             // for rows
