@@ -7,6 +7,7 @@ mod latin;
 use latin::LatinSolver;
 mod kenken;
 mod math;
+mod generator;
 
 fn main() {
     use std::time::Instant;
@@ -75,10 +76,10 @@ mod tests {
         assert_eq!(3, 3);
     }
 
-    #[test]
-    fn simple_solve_test() {
-        let mut ls = LatinSolver::new(3);
-    }
+    // #[test]
+    // fn simple_solve_test() {
+    //     let mut ls = LatinSolver::new(3);
+    // }
 
 
 }

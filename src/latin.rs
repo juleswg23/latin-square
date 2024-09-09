@@ -62,7 +62,7 @@ impl LatinSolver {
     }
 
     // Update the cube data structure to be true or false at (x,y) to bool b
-    fn set_cube_value(&mut self, x: usize, y: usize, n: usize, b: bool) -> () {
+    pub fn set_cube_value(&mut self, x: usize, y: usize, n: usize, b: bool) -> () {
         let location = self.get_loc(x, y);
         match b {
             true => { // turn on the bit
@@ -404,7 +404,7 @@ impl LatinSolver {
         for index in 0..self.cube().len() {
             let cell = self.cube[index];
             if cell == 0b0 {
-                panic!("Shouldn't ever return broken");
+                //panic!("Shouldn't ever return broken"); //TODO decide what to do with a broken grid
                 return SolvedStatus::Broken;
             }
 
@@ -487,6 +487,8 @@ impl LatinSolver {
     // row or column, then both 3 and 4 must occupy those squares (in what ever order). 3 and 4
     // can then be eliminated from the rest of the row and column.
     fn naked_pair(&mut self) -> bool {
+        assert!(self.order() > 2); // TODO this fails for a 2x2 grid, requires order > 2
+
         let mut result = false;
         for is_row in vec![true, false] {
             for axis_a in 0..self.order() {
@@ -590,6 +592,8 @@ impl LatinSolver {
                 true => continue,
                 false => {return SolvedStatus::Incomplete},
             }
+
+            // missing hidden pair/set
         }
     }
 }
@@ -714,6 +718,18 @@ mod tests {
         assert!(ls.naked_pair());
         assert_eq!(0b110011, *ls.get_cube_available(1, 0));
         assert_eq!(0b010000, *ls.get_cube_available(1, 1));
+
+
+    }
+
+    #[test]
+    fn test_naked_pair_incomplete() {
+        let mut ls = LatinSolver::new(3);
+        assert!(!ls.naked_pair());
+        // assert_eq!(0b110011, *ls.get_cube_available(1, 0));
+        // assert_eq!(0b010000, *ls.get_cube_available(1, 1));
+
+
     }
 
     #[test]
@@ -738,15 +754,17 @@ mod tests {
 
     }
 
-    #[test]
-    fn test_playground() {
-        let mut ls = LatinSolver::new(4);
-        ls.set_cube_available(0, 0, 0b1101);
-        ls.set_cube_available(0, 1, 0b1110);
-        ls.set_cube_available(0, 2, 0b1101);
-        ls.set_cube_available(0, 3, 0b0101);
-
-        LatinSolver::flip_cube_structure(&ls.cube()[0..ls.order()]);
-    }
 
 }
+
+    // #[test]
+    // fn test_playground() {
+    //     let mut ls = LatinSolver::new(4);
+    //     ls.set_cube_available(0, 0, 0b1101);
+    //     ls.set_cube_available(0, 1, 0b1110);
+    //     ls.set_cube_available(0, 2, 0b1101);
+    //     ls.set_cube_available(0, 3, 0b0101);
+    //
+    //     LatinSolver::flip_cube_structure(&ls.cube()[0..ls.order()]);
+    // }
+

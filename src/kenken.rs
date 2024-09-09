@@ -1,11 +1,11 @@
 #![allow(dead_code)]
-use crate::latin::LatinSolver;
+use crate::latin::{LatinSolver, SolvedStatus};
 use core::cmp::min;
 use crate::math::math;
 
 // The possible operations on a clue for a KenKen
 #[derive(Clone, Debug, strum_macros::Display)]
-enum Operation {
+pub(crate) enum Operation {
     Add,
     Subtract,
     Multiply,
@@ -17,16 +17,21 @@ enum Operation {
 
 // A data structure representing each clue of a KenKen puzzle
 #[derive(Debug)]
-struct Clue {
-    op: Operation,
-    target: usize,
+pub(crate) struct Clue {
+    pub(crate) op: Operation,
+    pub(crate) target: usize,
 }
 
+impl Clue {
+    pub fn new(op: Operation, target: usize) -> Self {
+        Self { op, target }
+    }
+}
 
 // A data structure for each region of the ken ken puzzle.
 // It will not know about the contents of the cells, just the clue and locations.
 #[derive(Debug)]
-struct Region {
+pub(crate) struct Region {
     clue: Clue,
     cells: Vec<usize>,
 }
@@ -64,14 +69,14 @@ impl Region {
 }
 
 // A KenKen struct has the dimension of the KenKen and a list of the regions
-struct KenKen {
+pub(crate) struct KenKen {
     order: usize,
-    regions: Vec<Region>,
+    pub(crate) regions: Vec<Region>,
 }
 
 impl KenKen {
     // Constructor takes the order as a param and initializes regions with no data
-    fn new(order: usize) -> Self {
+    pub fn new(order: usize) -> Self {
         Self {
             order,
             regions: vec![], // Could potentially make this build the kenken
@@ -92,14 +97,14 @@ impl KenKen {
 }
 
 // Extends LatinSolver in the sense that it solves specific KenKens by leaning on LatinSolver methods
-struct KenKenSolver {
-    ken_ken: KenKen,
-    latin_solver: LatinSolver,
+pub(crate) struct KenKenSolver {
+    pub(crate) ken_ken: KenKen,
+    pub(crate) latin_solver: LatinSolver,
 }
 
 impl KenKenSolver {
     // Takes a kenken, and builds a generic latin solver to overlay on top
-    fn new(ken_ken: KenKen) -> KenKenSolver {
+    pub(crate) fn new(ken_ken: KenKen) -> KenKenSolver {
         let order = ken_ken.order();
         KenKenSolver {
             ken_ken,
@@ -108,7 +113,7 @@ impl KenKenSolver {
     }
 
     // Returns true if the ken_ken_solver made any mutations.
-    fn apply_constraint(&mut self, region_index: usize) -> bool {
+    fn apply_constraint(&mut self, region_index: usize) -> bool { // TODO this should maybe take a ref to the region
         assert!(region_index < self.ken_ken.regions().len(),
                 "Region selected in apply_contstraint is out of range.");
 
@@ -336,6 +341,13 @@ impl KenKenSolver {
     // latin solver getter
     pub fn latin_solver(&self) -> &LatinSolver {
         &self.latin_solver
+    }
+    
+    pub fn ken_ken_logical_solver(&mut self) -> SolvedStatus {
+        for i in 0..self.ken_ken().regions().len() {
+            self.apply_constraint(i);
+        }
+        self.latin_solver.stepped_logical_solver()
     }
 }
 
