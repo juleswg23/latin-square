@@ -4,38 +4,31 @@
 
 use std::env;
 mod latin;
-use latin::LatinSolver;
+use crate::grid::Grid;
+
 mod kenken;
 mod math;
 mod generator;
+mod grid;
 
 fn main() {
     use std::time::Instant;
     env::set_var("RUST_BACKTRACE", "1");
-    let mut ls = LatinSolver::new(6);
-    // println!("{}", ls.cube.len());
-    // println!("{}", ls.get_cube_loc(3, 3, 4));
-    // println!("{}", ls.get_cube_value(3, 3, 2));
-    // println!("{}", ls.get_grid_value(3, 3));
+    let mut g = Grid::new(6);
+    // println!("{}", g.cube.len());
+    // println!("{}", g.get_cube_loc(3, 3, 4));
+    // println!("{}", g.get_cube_value(3, 3, 2));
+    // println!("{}", g.get_grid_value(3, 3));
 
-    ls.place_digit_xy(3, 3, 3);
-    ls.place_digit_xy(1, 3, 2);
-    ls.place_digit_xy(0, 0, 2);
+    g.place_digit_xy(3, 3, 3);
+    g.place_digit_xy(1, 3, 2);
+    g.place_digit_xy(0, 0, 2);
 
-    // println!("{}", ls.get_cube_value(3, 3, 2));
-    // println!("{}", ls.get_cube_value(3, 3, 3));
+    // println!("{}", g.get_cube_value(3, 3, 2));
+    // println!("{}", g.get_cube_value(3, 3, 3));
 
-    println!("{}", ls.cube_to_string());
-    println!("{}", ls.grid_to_string());
-
-    let now = Instant::now();
-
-    //let mut count: u64 = 0;
-    println!("solve success? {}", ls.solve(false));
-    //println!("count {}", count);
-
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
+    println!("{}", g.candidates_to_string());
+    println!("{}", g.digits_to_string());
 }
 
 #[cfg(test)]
@@ -50,35 +43,35 @@ mod tests {
     #[allow(dead_code)]
     fn test2() {
         env::set_var("RUST_BACKTRACE", "1");
-        let mut ls = LatinSolver::new(3);
-        // println!("{}", ls.cube.len());
-        // println!("{}", ls.get_cube_loc(3, 3, 4));
-        // println!("{}", ls.get_cube_value(3, 3, 2));
-        // println!("{}", ls.get_grid_value(3, 3));
+        let mut g = Grid::new(3);
+        // println!("{}", g.cube.len());
+        // println!("{}", g.get_cube_loc(3, 3, 4));
+        // println!("{}", g.get_cube_value(3, 3, 2));
+        // println!("{}", g.get_grid_value(3, 3));
 
-        ls.place_digit_xy(0, 1, 3);
-        ls.place_digit_xy(0, 0, 1);
+        g.place_digit_xy(0, 1, 3);
+        g.place_digit_xy(0, 0, 1);
 
-        // println!("{}", ls.get_cube_value(3, 3, 2));
-        // println!("{}", ls.get_cube_value(3, 3, 3));
+        // println!("{}", g.get_cube_value(3, 3, 2));
+        // println!("{}", g.get_cube_value(3, 3, 3));
 
-        println!("{}", ls.cube_to_string());
-        println!("{}", ls.grid_to_string());
+        println!("{}", g.candidates_to_string());
+        println!("{}", g.digits_to_string());
 
-        let now = Instant::now();
-
-        //let mut count: u64 = 0;
-        println!("solve success? {}", ls.solve(false));
-        //println!("count {}", count);
-
-        let elapsed = now.elapsed();
-        println!("Elapsed: {:.2?}", elapsed);
-        assert_eq!(3, 3);
+        // let now = Instant::now();
+        // 
+        // //let mut count: u64 = 0;
+        // println!("solve success? {}", g.solve(false));
+        // //println!("count {}", count);
+        // 
+        // let elapsed = now.elapsed();
+        // println!("Elapsed: {:.2?}", elapsed);
+        // assert_eq!(3, 3);
     }
 
     // #[test]
     // fn simple_solve_test() {
-    //     let mut ls = LatinSolver::new(3);
+    //     let mut g = LatinSolver::new(3);
     // }
 
 

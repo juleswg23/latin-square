@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use crate::latin::{LatinSolver, SolvedStatus};
+use crate::latin::{latin_solve, SolvedStatus};
 use core::cmp::min;
 use crate::math::math;
 
@@ -97,9 +97,9 @@ impl KenKen {
 }
 
 // Extends LatinSolver in the sense that it solves specific KenKens by leaning on LatinSolver methods
-pub(crate) struct KenKenSolver {
-    pub(crate) ken_ken: KenKen,
-    pub(crate) latin_solver: LatinSolver,
+struct KenKenSolver {
+    ken_ken: KenKen,
+    grid: Grid,
 }
 
 impl KenKenSolver {
@@ -108,7 +108,7 @@ impl KenKenSolver {
         let order = ken_ken.order();
         KenKenSolver {
             ken_ken,
-            latin_solver: LatinSolver::new(order),
+            grid: Grid::new(order),
         }
     }
 
