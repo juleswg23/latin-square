@@ -727,7 +727,16 @@ mod tests {
         assert_eq!(0b110011, *ls.get_cube_available(1, 0));
         assert_eq!(0b010000, *ls.get_cube_available(1, 1));
 
-
+        let mut ls = LatinSolver::new(6);
+        ls.set_cube_available(0, 3, 0b111111);
+        ls.set_cube_available(1, 3, 0b011000);
+        ls.set_cube_available(2, 3, 0b010001);
+        ls.set_cube_available(3, 3, 0b001100); //pair
+        ls.set_cube_available(4, 3, 0b111111);
+        ls.set_cube_available(5, 3, 0b001100); //pair
+        ls.naked_pair();
+        assert_eq!(0b110011, *ls.get_cube_available(0, 3));
+        assert_eq!(0b010000, *ls.get_cube_available(1, 3));
     }
 
     #[test]
