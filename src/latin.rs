@@ -13,9 +13,17 @@ pub enum SolvedStatus {
 }
 
 /// An object that contains solving data for Latin Square puzzles
+pub struct SolvingGrid {
+    order: usize,     // the dimension of the square KenKen grid
+    candidates: Vec<i32>,   // order^2 - a 2d array of binary ints. 0b111111
+
+    // might be useful to have grid appear elsewhere as its own type
+    digits: Vec<usize>, // order^2
+}
+
 pub struct LatinSolver {
     order: usize,     // the dimension of the square KenKen grid
-    cube: Vec<i32>,   // order^2 - a 2d array of binary ints.
+    cube: Vec<i32>,   // order^2 - a 2d array of binary ints. 0b111111
 
     // might be useful to have grid appear elsewhere as its own type
     grid: Vec<usize>, // order^2
