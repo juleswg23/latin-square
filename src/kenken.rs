@@ -15,6 +15,8 @@ pub(crate) enum Operation {
     NoOp,
 }
 
+// test commit
+
 // A data structure representing each clue of a KenKen puzzle
 #[derive(Debug)]
 pub(crate) struct Clue {
