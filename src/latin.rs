@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+// #![allow(dead_code)]
 
 use itertools::Itertools;
 
@@ -10,7 +10,7 @@ pub enum SolvedStatus {
     Broken,
 }
 
-pub(crate) mod latin_solve {
+pub mod latin_solve {
     use std::collections::HashMap;
     use crate::grid::Grid;
     use crate::latin::SolvedStatus;
@@ -245,7 +245,7 @@ pub(crate) mod latin_solve {
     // If three candidates occur only thrice in a row or column we can make then a naked triple,
     // and call that function to eliminate candidates from the row/col.
     fn hidden_triple(grid: &mut Grid) -> () {
-    
+        todo!()
     }
     
     pub fn stepped_logical_solver(grid: &mut Grid) -> SolvedStatus {

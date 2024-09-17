@@ -3,7 +3,7 @@ use crate::latin::SolvedStatus;
 use crate::latin::latin_solve;
 use crate::kenken::KenKen;
 use crate::kenken::Region;
-use crate::kenken::Clue;
+use kenken::Clue;
 use crate::kenken::Operation;
 use crate::kenken::kenken_solve;
 

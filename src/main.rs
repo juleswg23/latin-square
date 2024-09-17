@@ -4,12 +4,13 @@
 
 use std::env;
 mod latin;
-use crate::grid::Grid;
-
 mod kenken;
 mod math;
 mod generator;
 mod grid;
+
+use crate::grid::Grid;
+
 
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");

@@ -1,9 +1,7 @@
-#![allow(dead_code)]
-use crate::Grid;
-
+// #![allow(dead_code)]
 // The possible operations on a clue for a KenKen
 #[derive(Clone, Debug, strum_macros::Display)]
-pub(crate) enum Operation {
+pub enum Operation {
     Add,
     Subtract,
     Multiply,
@@ -15,7 +13,7 @@ pub(crate) enum Operation {
 
 // A data structure representing each clue of a KenKen puzzle
 #[derive(Debug)]
-pub(crate) struct Clue {
+pub struct Clue {
     pub(crate) op: Operation,
     pub(crate) target: usize,
 }
@@ -81,24 +79,6 @@ impl KenKen {
         }
     }
 
-    // TODO maybe try making a to_string()
-
-    // Order getter
-    pub fn order(&self) -> usize {
-        self.order
-    }
-
-    // Regions getter
-    pub fn regions(&self) -> &Vec<Region> {
-        &self.regions
-    }
-    
-    // Regions getter
-    pub fn region_n(&self, n: usize) -> &Region {
-        assert!(n < self.regions.len(), "Region index out of range.");
-        &self.regions[n]
-    }
-
     pub fn read_ken_ken(input: String) -> KenKen {
         // Takes a string input of a KenKen, and converts it to a KenKen object
         // Example format looks like 3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:
@@ -160,11 +140,31 @@ impl KenKen {
         }
         ken_ken
     }
+
+    // TODO maybe try making a to_string()
+
+    // Order getter
+    pub fn order(&self) -> usize {
+        self.order
+    }
+
+    // Regions getter
+    pub fn regions(&self) -> &Vec<Region> {
+        &self.regions
+    }
+    
+    // Regions getter
+    pub fn region_n(&self, n: usize) -> &Region {
+        assert!(n < self.regions.len(), "Region index out of range.");
+        &self.regions[n]
+    }
+    
 }
 
 // Extends LatinSolver in the sense that it solves specific KenKens by leaning on LatinSolver methods
-pub(crate) mod kenken_solve {
-    use crate::kenken::{KenKen, Region};
+pub mod kenken_solve {
+    mod KenKen;
+    use crate::kenken::KenKen;
     use crate::grid::Grid;
     use crate::kenken::Operation;
     use crate::latin::{latin_solve, SolvedStatus};
