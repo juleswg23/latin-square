@@ -1,11 +1,12 @@
 use crate::grid::Grid;
 use crate::latin::SolvedStatus;
 use crate::latin::latin_solve;
-use crate::kenken::KenKenSolver;
 use crate::kenken::KenKen;
 use crate::kenken::Region;
 use crate::kenken::Clue;
 use crate::kenken::Operation;
+use crate::kenken::kenken_solve;
+
 
 
 fn create_puzzle(grid: &mut Grid) -> KenKen {
@@ -40,13 +41,12 @@ mod tests {
     #[test]
     fn test_generate() {
         let order = 3;
-        let mut puzzle = Grid::new(order);
+        let mut grid = Grid::new(order);
 
-        let ken_ken = create_puzzle(&mut puzzle);
-        let mut solver = KenKenSolver::new(ken_ken);
+        let ken_ken = create_puzzle(&mut grid);
         //let mut grid = solver.grid;
 
-        assert_eq!(SolvedStatus::Complete, solver.ken_ken_logical_solver())
+        assert_eq!(SolvedStatus::Complete, kenken_solve::ken_ken_logical_solver(&mut grid, ken_ken))
         
     }
 
