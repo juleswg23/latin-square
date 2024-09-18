@@ -1,85 +1,40 @@
-#![allow(unreachable_code)]
-#![allow(unused_mut)]
-#![allow(unused_variables)]
+// #![allow(unreachable_code)]
+// #![allow(unused_mut)]
+// #![allow(unused_variables)]
 
 use std::env;
-mod latin;
-use latin::LatinSolver;
-mod kenken;
-mod math;
 mod generator;
+mod grid;
+mod kenken;
+mod latin;
+mod math;
+
+use crate::grid::Grid;
+use crate::kenken::{Clue, KenKen, Operation, Region};
+use crate::latin::latin_solve;
 
 fn main() {
-    use std::time::Instant;
     env::set_var("RUST_BACKTRACE", "1");
-    let mut ls = LatinSolver::new(6);
-    // println!("{}", ls.cube.len());
-    // println!("{}", ls.get_cube_loc(3, 3, 4));
-    // println!("{}", ls.get_cube_value(3, 3, 2));
-    // println!("{}", ls.get_grid_value(3, 3));
+    let mut g = Grid::new(6);
 
-    ls.place_digit_xy(3, 3, 3);
-    ls.place_digit_xy(1, 3, 2);
-    ls.place_digit_xy(0, 0, 2);
+    g.place_digit_xy(3, 3, 3);
+    g.place_digit_xy(1, 3, 2);
+    g.place_digit_xy(0, 0, 2);
 
-    // println!("{}", ls.get_cube_value(3, 3, 2));
-    // println!("{}", ls.get_cube_value(3, 3, 3));
+    latin_solve::stepped_logical_solver(&mut g);
 
-    println!("{}", ls.cube_to_string());
-    println!("{}", ls.grid_to_string());
+    // println!("{}", g.get_cube_value(3, 3, 2));
+    // println!("{}", g.get_cube_value(3, 3, 3));
 
-    let now = Instant::now();
+    println!("{}", g.candidates_to_string());
+    println!("{}", g.digits_to_string());
 
-    //let mut count: u64 = 0;
-    println!("solve success? {}", ls.solve(false));
-    //println!("count {}", count);
-
-    let elapsed = now.elapsed();
-    println!("Elapsed: {:.2?}", elapsed);
+    let mut k = KenKen::new(g.order());
+    k.regions
+        .push(Region::new(Clue::new(Operation::Add, 3), vec![3, 4]));
+    let r = k.region_n(2);
+    println!("{:?}", r.clue());
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    use std::time::Instant;
-
-    use std::env;
-    // use latin::LatinSolver;
-
-    //#[test]
-    #[allow(dead_code)]
-    fn test2() {
-        env::set_var("RUST_BACKTRACE", "1");
-        let mut ls = LatinSolver::new(3);
-        // println!("{}", ls.cube.len());
-        // println!("{}", ls.get_cube_loc(3, 3, 4));
-        // println!("{}", ls.get_cube_value(3, 3, 2));
-        // println!("{}", ls.get_grid_value(3, 3));
-
-        ls.place_digit_xy(0, 1, 3);
-        ls.place_digit_xy(0, 0, 1);
-
-        // println!("{}", ls.get_cube_value(3, 3, 2));
-        // println!("{}", ls.get_cube_value(3, 3, 3));
-
-        println!("{}", ls.cube_to_string());
-        println!("{}", ls.grid_to_string());
-
-        let now = Instant::now();
-
-        //let mut count: u64 = 0;
-        println!("solve success? {}", ls.solve(false));
-        //println!("count {}", count);
-
-        let elapsed = now.elapsed();
-        println!("Elapsed: {:.2?}", elapsed);
-        assert_eq!(3, 3);
-    }
-
-    // #[test]
-    // fn simple_solve_test() {
-    //     let mut ls = LatinSolver::new(3);
-    // }
-
-
-}
+mod tests {}
