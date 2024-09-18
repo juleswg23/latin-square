@@ -3,7 +3,10 @@
 pub mod math {
     // Given an index into a flat array, return the (x,y) index pair.
     pub fn xy_pair(index: usize, order: usize) -> (usize, usize) {
-        assert!(index < order.pow(2), "The index provided to xy_pair is out of range.");
+        assert!(
+            index < order.pow(2),
+            "The index provided to xy_pair is out of range."
+        );
         (index / order, index % order)
     }
 

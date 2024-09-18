@@ -154,27 +154,25 @@ impl KenKen {
     pub fn regions(&self) -> &Vec<Region> {
         &self.regions
     }
-    
+
     // Regions getter
     pub fn region_n(&self, n: usize) -> &Region {
         assert!(n < self.regions.len(), "Region index out of range.");
         &self.regions[n]
     }
-
 }
 
 // Extends LatinSolver in the sense that it solves specific KenKens by leaning on LatinSolver methods
 pub mod kenken_solve {
-    use crate::kenken::{KenKen, Region};
     use crate::grid::Grid;
     use crate::kenken::Operation;
+    use crate::kenken::{KenKen, Region};
     use crate::latin::{latin_solve, SolvedStatus};
-    use core::cmp::min;
     use crate::math::math;
+    use core::cmp::min;
 
     // Returns true if the ken_ken_solver made any mutations.
     fn apply_constraint(grid: &mut Grid, region: &Region) -> bool {
-
         // find region associated with index
         let operation = &region.clue().op;
 
@@ -185,8 +183,10 @@ pub mod kenken_solve {
         match operation {
             // If the cluie is a given,
             Operation::Given => {
-                assert!(region.clue().target >= 1 && region.clue().target <= grid.order(),
-                        "target given value is either 0 or greater than the order.");
+                assert!(
+                    region.clue().target >= 1 && region.clue().target <= grid.order(),
+                    "target given value is either 0 or greater than the order."
+                );
 
                 // update the latin solver with the given value
                 let new_mask = 0b1 << region.clue().target - 1;
@@ -206,7 +206,7 @@ pub mod kenken_solve {
 
                 // If target is over max or under min, set all possibilities to false.
                 if region.clue().target < min_sum || region.clue().target > max_sum {
-                    update_grid( grid, region, vec![0b0; region.cells().len()]);
+                    update_grid(grid, region, vec![0b0; region.cells().len()]);
                     return true;
                 }
 
@@ -221,9 +221,7 @@ pub mod kenken_solve {
                     let max_bit = math::max_bit(mask);
 
                     // update with mask of 1s that are available from min
-                    mask &= (0b1
-                        << (min(math::min_bit(mask) + room_from_min, grid.order())))
-                        - 1;
+                    mask &= (0b1 << (min(math::min_bit(mask) + room_from_min, grid.order()))) - 1;
 
                     // update with mask of 1s that are available from max
                     // This avoids subtractions problems being less than 0.
@@ -293,7 +291,6 @@ pub mod kenken_solve {
                     for i in 1..=order {
                         // First check if the digit is in the current cell
                         if (0b1 << (i - 1)) & other_masks[0] != 0 {
-
                             // recursive call including i from the current cell
                             if multiply_helper(
                                 new_masks,
@@ -351,8 +348,22 @@ pub mod kenken_solve {
 
                 // Dividing by 2 because any larger value won't have a higher pair
                 for i in 1..=grid.order() / 2 {
-                    divide_helper(mask_a, mask_b, &mut mask_a_updated, &mut mask_b_updated, region.clue().target, i);
-                    divide_helper(mask_b, mask_a, &mut mask_b_updated, &mut mask_a_updated, region.clue().target, i);
+                    divide_helper(
+                        mask_a,
+                        mask_b,
+                        &mut mask_a_updated,
+                        &mut mask_b_updated,
+                        region.clue().target,
+                        i,
+                    );
+                    divide_helper(
+                        mask_b,
+                        mask_a,
+                        &mut mask_b_updated,
+                        &mut mask_a_updated,
+                        region.clue().target,
+                        i,
+                    );
                 }
 
                 available_masks[0] = mask_a_updated;
@@ -385,38 +396,39 @@ pub mod kenken_solve {
         }
         available_masks
     }
-    
+
     pub fn ken_ken_logical_solver(grid: &mut Grid, ken_ken: KenKen) -> SolvedStatus {
         for region in ken_ken.regions() {
             apply_constraint(grid, region);
         }
         latin_solve::stepped_logical_solver(grid) // todo
-
     }
-    
+
     #[cfg(test)]
     mod tests {
-        use crate::kenken::{KenKen, kenken_solve};
         use super::*;
-
+        use crate::kenken::{kenken_solve, KenKen};
 
         // TODO refactor test code so it's not so repetitive.
 
         #[test]
         fn test_subtraction() {
-            let k = KenKen::read_ken_ken("3: 3+ 00 01: 1- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 3+ 00 01: 1- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             kenken_solve::apply_constraint(&mut grid, k.region_n(1));
             assert_eq!(*grid.get_candidates_available(0, 2), 0b111);
             assert_eq!(*grid.get_candidates_available(1, 2), 0b111);
 
-            let k = KenKen::read_ken_ken("3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             kenken_solve::apply_constraint(&mut grid, k.region_n(1));
             assert_eq!(*grid.get_candidates_available(0, 2), 0b101);
             assert_eq!(*grid.get_candidates_available(1, 2), 0b101);
 
-            let k = KenKen::read_ken_ken("3: 3+ 00 01: 3- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 3+ 00 01: 3- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             kenken_solve::apply_constraint(&mut grid, k.region_n(1));
             assert_eq!(*grid.get_candidates_available(0, 2), 0b000);
@@ -442,25 +454,29 @@ pub mod kenken_solve {
 
         #[test]
         fn test_addition() {
-            let k = KenKen::read_ken_ken("3: 1+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 1+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             kenken_solve::apply_constraint(&mut grid, k.region_n(0));
             assert_eq!(*grid.get_candidates_available(0, 0), 0b000);
             assert_eq!(*grid.get_candidates_available(0, 1), 0b000);
 
-            let k = KenKen::read_ken_ken("3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 3+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             kenken_solve::apply_constraint(&mut grid, k.region_n(0));
             assert_eq!(*grid.get_candidates_available(0, 0), 0b011);
             assert_eq!(*grid.get_candidates_available(0, 1), 0b011);
 
-            let k = KenKen::read_ken_ken("3: 5+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 5+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             kenken_solve::apply_constraint(&mut grid, k.region_n(0));
             assert_eq!(*grid.get_candidates_available(0, 0), 0b110);
             assert_eq!(*grid.get_candidates_available(0, 1), 0b110);
 
-            let k = KenKen::read_ken_ken("3: 7+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 7+ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             kenken_solve::apply_constraint(&mut grid, k.region_n(0));
             assert_eq!(*grid.get_candidates_available(0, 0), 0b000);
@@ -499,19 +515,22 @@ pub mod kenken_solve {
 
         #[test]
         fn test_division() {
-            let k = KenKen::read_ken_ken("3: 2/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 2/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             kenken_solve::apply_constraint(&mut grid, k.region_n(0));
             assert_eq!(*grid.get_candidates_available(0, 0), 0b011);
             assert_eq!(*grid.get_candidates_available(0, 1), 0b011);
 
-            let k = KenKen::read_ken_ken("3: 3/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 3/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             kenken_solve::apply_constraint(&mut grid, k.region_n(0));
             assert_eq!(*grid.get_candidates_available(0, 0), 0b101);
             assert_eq!(*grid.get_candidates_available(0, 1), 0b101);
 
-            let k = KenKen::read_ken_ken("3: 4/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 4/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             kenken_solve::apply_constraint(&mut grid, k.region_n(0));
             assert_eq!(*grid.get_candidates_available(0, 0), 0b000);
@@ -529,19 +548,22 @@ pub mod kenken_solve {
 
         #[test]
         fn test_multiplication() {
-            let k = KenKen::read_ken_ken("3: 2* 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 2* 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             kenken_solve::apply_constraint(&mut grid, k.region_n(0));
             assert_eq!(*grid.get_candidates_available(0, 0), 0b011);
             assert_eq!(*grid.get_candidates_available(0, 1), 0b011);
 
-            let k = KenKen::read_ken_ken("3: 3* 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 3* 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             kenken_solve::apply_constraint(&mut grid, k.region_n(0));
             assert_eq!(*grid.get_candidates_available(0, 0), 0b101);
             assert_eq!(*grid.get_candidates_available(0, 1), 0b101);
 
-            let k = KenKen::read_ken_ken("3: 5* 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 5* 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             kenken_solve::apply_constraint(&mut grid, k.region_n(0));
             assert_eq!(*grid.get_candidates_available(0, 1), 0b000);
@@ -561,12 +583,14 @@ pub mod kenken_solve {
 
         #[test]
         fn test_given() {
-            let k = KenKen::read_ken_ken("3: 2/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 2/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             kenken_solve::apply_constraint(&mut grid, k.region_n(2));
             assert_eq!(*grid.get_candidates_available(2, 2), 0b010);
 
-            let k = KenKen::read_ken_ken("3: 2/ 00 01: 2- 02 12: 3 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 2/ 00 01: 2- 02 12: 3 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             kenken_solve::apply_constraint(&mut grid, k.region_n(2));
             assert_eq!(*grid.get_candidates_available(2, 2), 0b100);
@@ -582,7 +606,8 @@ pub mod kenken_solve {
 
         #[test]
         fn holistic_test() {
-            let k = KenKen::read_ken_ken("3: 2/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
+            let k =
+                KenKen::read_ken_ken("3: 2/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             for region in k.regions() {
                 kenken_solve::apply_constraint(&mut grid, region);
@@ -628,4 +653,3 @@ pub mod kenken_solve {
         }
     }
 }
-

@@ -3,11 +3,11 @@
 // #![allow(unused_variables)]
 
 use std::env;
-mod latin;
-mod kenken;
-mod math;
 mod generator;
 mod grid;
+mod kenken;
+mod latin;
+mod math;
 
 use crate::grid::Grid;
 use crate::kenken::{Clue, KenKen, Operation, Region};
@@ -20,7 +20,7 @@ fn main() {
     g.place_digit_xy(3, 3, 3);
     g.place_digit_xy(1, 3, 2);
     g.place_digit_xy(0, 0, 2);
-    
+
     latin_solve::stepped_logical_solver(&mut g);
 
     // println!("{}", g.get_cube_value(3, 3, 2));
@@ -30,11 +30,11 @@ fn main() {
     println!("{}", g.digits_to_string());
 
     let mut k = KenKen::new(g.order());
-    k.regions.push(Region::new(Clue::new(Operation::Add, 3), vec![3, 4]));
-    let r  = k.region_n(2);
+    k.regions
+        .push(Region::new(Clue::new(Operation::Add, 3), vec![3, 4]));
+    let r = k.region_n(2);
     println!("{:?}", r.clue());
 }
 
 #[cfg(test)]
-mod tests {
-}
+mod tests {}

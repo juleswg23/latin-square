@@ -1,10 +1,8 @@
 use crate::grid::Grid;
-use crate::latin::{SolvedStatus, latin_solve};
-use crate::kenken::{KenKen, Region, Clue, Operation, kenken_solve};
-
+use crate::kenken::{kenken_solve, Clue, KenKen, Operation, Region};
+use crate::latin::{latin_solve, SolvedStatus};
 
 fn create_puzzle(grid: &mut Grid) -> KenKen {
-
     grid.place_digit_xy(0, 0, 1);
     grid.place_digit_xy(0, 1, 2);
     grid.place_digit_xy(0, 2, 3);
@@ -20,9 +18,8 @@ fn create_puzzle(grid: &mut Grid) -> KenKen {
     let mut ken_ken = KenKen::new(grid.order());
 
     for (index, digit) in grid.digits().iter().enumerate() {
-        let region =Region::new(Clue::new(Operation::Given, *digit), vec![index]);
+        let region = Region::new(Clue::new(Operation::Given, *digit), vec![index]);
         ken_ken.regions.push(region);
-
     }
 
     ken_ken
@@ -40,8 +37,10 @@ mod tests {
         let ken_ken = create_puzzle(&mut grid);
         //let mut grid = solver.grid;
 
-        assert_eq!(SolvedStatus::Complete, kenken_solve::ken_ken_logical_solver(&mut grid, ken_ken))
-        
+        assert_eq!(
+            SolvedStatus::Complete,
+            kenken_solve::ken_ken_logical_solver(&mut grid, ken_ken)
+        )
     }
 
     #[test]
@@ -49,8 +48,6 @@ mod tests {
         let mut grid = Grid::new(3);
         let output = latin_solve::stepped_logical_solver(&mut grid);
         assert_eq!(output, SolvedStatus::Incomplete);
-
-
     }
 
     #[test]
@@ -62,7 +59,4 @@ mod tests {
         let output = latin_solve::stepped_logical_solver(&mut grid);
         assert_eq!(output, SolvedStatus::Broken);
     }
-
-
-
 }

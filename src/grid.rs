@@ -1,12 +1,12 @@
 // #![allow(dead_code)]
-use itertools::Itertools;
 use crate::math::math;
+use itertools::Itertools;
 
 /// An object that contains solving data for Latin Square puzzles
 
 pub struct Grid {
-    order: usize,     // the dimension of the square KenKen grid
-    candidates: Vec<i32>,   // order^2 - a 2d array of binary ints. 0b111111
+    order: usize,         // the dimension of the square KenKen grid
+    candidates: Vec<i32>, // order^2 - a 2d array of binary ints. 0b111111
 
     // might be useful to have grid appear elsewhere as its own type
     digits: Vec<usize>, // order^2
@@ -51,12 +51,14 @@ impl Grid {
     pub fn set_candidates_value(&mut self, x: usize, y: usize, n: usize, b: bool) -> () {
         let location = self.get_loc(x, y);
         match b {
-            true => { // turn on the bit
+            true => {
+                // turn on the bit
                 self.candidates[location] |= 0b1 << (n - 1);
-            },
-            false => { // turn off the bit
+            }
+            false => {
+                // turn off the bit
                 self.candidates[location] &= !(0b1 << (n - 1));
-            },
+            }
         }
     }
 
@@ -78,10 +80,13 @@ impl Grid {
             // Take a row slice
             true => self.candidates()[index * self.order()..(index + 1) * self.order()].to_vec(),
             // Take every nth element, since we are in a flattened 2d vector
-            false => self.candidates().iter()
+            false => self
+                .candidates()
+                .iter()
                 .skip(index)
                 .step_by(self.order())
-                .copied().collect(),
+                .copied()
+                .collect(),
         }
     }
 
@@ -193,7 +198,12 @@ impl Grid {
         //old_data
     }
 
-    pub fn place_digit_xy_deepcopy(&mut self, x: usize, y: usize, n: usize) -> (Vec<usize>, Vec<i32>) {
+    pub fn place_digit_xy_deepcopy(
+        &mut self,
+        x: usize,
+        y: usize,
+        n: usize,
+    ) -> (Vec<usize>, Vec<i32>) {
         let old_data: (Vec<usize>, Vec<i32>) = (self.digits.clone(), self.candidates.clone());
         self.place_digit_xy(x, y, n);
         old_data
@@ -207,8 +217,18 @@ impl Grid {
     // Given a row, remove the candidate from all cells in cube except the locations provided in do_not_remove
     // TODO MAYBE try not to call if row has no changes, cuz this looks sorta expensive
     // Returns true if candidates were removed
-    pub fn remove_candidate_axis(&mut self, axis_a: usize, digit_mask: i32, is_row: bool, do_not_remove: &Vec<usize>) -> bool {
-        assert_ne!(&Vec::<usize>::new(), do_not_remove, "cannot remove candidate from every position");
+    pub fn remove_candidate_axis(
+        &mut self,
+        axis_a: usize,
+        digit_mask: i32,
+        is_row: bool,
+        do_not_remove: &Vec<usize>,
+    ) -> bool {
+        assert_ne!(
+            &Vec::<usize>::new(),
+            do_not_remove,
+            "cannot remove candidate from every position"
+        );
         assert_ne!(0b0, digit_mask, "Cannot remove no digit");
         assert_ne!(0b0, !digit_mask, "Cannot remove all digits");
         let mut result = false;
@@ -216,7 +236,8 @@ impl Grid {
         // digit mask is 1 at position n-1 for the digit n's we want to remove.
 
         for axis_b in 0..self.order() {
-            if !do_not_remove.contains(&axis_b) { // skip unless not in do not remove
+            if !do_not_remove.contains(&axis_b) {
+                // skip unless not in do not remove
                 let (row, col) = match is_row {
                     true => (axis_a, axis_b),
                     false => (axis_b, axis_a),
@@ -233,7 +254,6 @@ impl Grid {
     }
 }
 
-
 mod tests {
     use super::*;
 
@@ -242,7 +262,7 @@ mod tests {
         let mut ls = Grid::new(6);
         ls.place_digit_xy(0, 1, 2);
         assert_eq!(2, ls.get_digits_value(0, 1));
-        assert_eq!(0, ls.get_candidates_available(0,0) & 0b000010);
+        assert_eq!(0, ls.get_candidates_available(0, 0) & 0b000010);
     }
 
     #[test]
@@ -258,12 +278,10 @@ mod tests {
 
         assert!(!ls.remove_candidate_axis(5, 6, true, &vec![0, 1, 2, 3, 4, 5]));
     }
-    
+
     #[test]
     fn get_candidates_vector() {
         assert!(true);
         //todo!();
     }
-
-
 }
