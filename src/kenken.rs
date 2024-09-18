@@ -1,4 +1,7 @@
 // #![allow(dead_code)]
+use crate::Grid;
+
+
 // The possible operations on a clue for a KenKen
 #[derive(Clone, Debug, strum_macros::Display)]
 pub enum Operation {
@@ -27,7 +30,7 @@ impl Clue {
 // A data structure for each region of the ken ken puzzle.
 // It will not know about the contents of the cells, just the clue and locations.
 #[derive(Debug)]
-pub(crate) struct Region {
+pub struct Region {
     clue: Clue,
     cells: Vec<usize>,
 }
@@ -65,7 +68,7 @@ impl Region {
 }
 
 // A KenKen struct has the dimension of the KenKen and a list of the regions
-pub(crate) struct KenKen {
+pub struct KenKen {
     order: usize,
     pub(crate) regions: Vec<Region>,
 }
@@ -158,13 +161,12 @@ impl KenKen {
         assert!(n < self.regions.len(), "Region index out of range.");
         &self.regions[n]
     }
-    
+
 }
 
 // Extends LatinSolver in the sense that it solves specific KenKens by leaning on LatinSolver methods
 pub mod kenken_solve {
-    mod KenKen;
-    use crate::kenken::KenKen;
+    use crate::kenken::{KenKen, Region};
     use crate::grid::Grid;
     use crate::kenken::Operation;
     use crate::latin::{latin_solve, SolvedStatus};
@@ -390,7 +392,7 @@ pub mod kenken_solve {
             apply_constraint(grid, region);
         }
         latin_solve::stepped_logical_solver(grid) // todo
-        
+
     }
 
 
