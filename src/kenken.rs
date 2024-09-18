@@ -1,7 +1,6 @@
 // #![allow(dead_code)]
 use crate::Grid;
 
-
 // The possible operations on a clue for a KenKen
 #[derive(Clone, Debug, strum_macros::Display)]
 pub enum Operation {
@@ -17,8 +16,8 @@ pub enum Operation {
 // A data structure representing each clue of a KenKen puzzle
 #[derive(Debug)]
 pub struct Clue {
-    pub(crate) op: Operation,
-    pub(crate) target: usize,
+    op: Operation,
+    target: usize,
 }
 
 impl Clue {

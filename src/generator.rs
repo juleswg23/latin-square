@@ -1,12 +1,6 @@
 use crate::grid::Grid;
-use crate::latin::SolvedStatus;
-use crate::latin::latin_solve;
-use crate::kenken::KenKen;
-use crate::kenken::Region;
-use crate::kenken::Clue;
-use crate::kenken::Operation;
-use crate::kenken::kenken_solve;
-
+use crate::latin::{SolvedStatus, latin_solve};
+use crate::kenken::{KenKen, Region, Clue, Operation, kenken_solve};
 
 
 fn create_puzzle(grid: &mut Grid) -> KenKen {
