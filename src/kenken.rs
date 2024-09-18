@@ -1,5 +1,7 @@
 // #![allow(dead_code)]
 
+use itertools::Itertools;
+
 // The possible operations on a clue for a KenKen
 #[derive(Clone, Debug, strum_macros::Display)]
 pub enum Operation {
@@ -22,6 +24,20 @@ pub struct Clue {
 impl Clue {
     pub fn new(op: Operation, target: usize) -> Self {
         Self { op, target }
+    }
+
+    pub fn to_string(&self) -> String {
+        let op_string = match self.op {
+            Operation::Add => "+",
+            Operation::Subtract => "-",
+            Operation::Multiply => "*",
+            Operation::Divide => "/",
+            Operation::Given => "G",
+            Operation::Unknown => "Unknown",
+            Operation::NoOp => "No-op"
+        };
+
+        self.target.to_string() + op_string
     }
 }
 
@@ -47,6 +63,7 @@ impl Region {
     // Add cell index to cell vector
     pub fn add_cell(&mut self, cell: usize) {
         self.cells.push(cell);
+        self.cells.sort(); // maintain sorted so the first cell is leftmost of top row
     }
 
     // Removes cell iff it is present.
@@ -142,7 +159,39 @@ impl KenKen {
         ken_ken
     }
 
-    // TODO maybe try making a to_string()
+    // Sort of workable to_string
+    // Not great when there are clues of more than 1 digit
+    pub fn to_string(&self) -> String {
+        assert!(self.regions().len() <= 26, "print won't work on too many regions");
+
+        let mut arr: Vec<String> = vec!["".to_string(); self.order()*self.order()];
+
+        for (index, region) in self.regions().iter().enumerate() {
+            for cell in region.cells() {
+                arr[*cell] = ((b'a' + index as u8) as char).to_string() + &region.clue.to_string();
+            }
+        }
+
+
+        let mut result = String::from("");
+
+        for i in 0..self.order() {
+            let mut builder: Vec<String> = Vec::new();
+            for j in 0..self.order() {
+                builder.push(arr[i * self.order() + j].clone());
+            }
+
+            let row: String = " ".to_string() + &builder.iter().join(" | ") + &" ";
+            let gap: String = if i < self.order() - 1 {
+                "\n".to_string() + &"_".repeat((self.order()) * 6 - 1) + "\n"
+            } else {
+                "\n".to_string()
+            };
+            result = result + &row + &gap;
+        }
+
+        result
+    }
 
     // Order getter
     pub fn order(&self) -> usize {
@@ -660,4 +709,16 @@ pub mod kenken_solve {
             assert_eq!(math::min_bit(number), 3);
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::KenKen;
+
+    #[test]
+    fn ken_ken_to_string() {
+        let k = KenKen::read_ken_ken("3: 2/ 00 01: 2- 02 12: 3 22: 9+ 10 11 20 21:".to_string());
+        println!("{}", k.to_string());
+    }
+
 }

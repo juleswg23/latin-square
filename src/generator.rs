@@ -27,21 +27,30 @@ fn create_puzzle(grid: &mut Grid) -> KenKen {
 
 #[cfg(test)]
 mod tests {
+    use crate::kenken::kenken_solve::ken_ken_logical_solver;
     use super::*;
 
     #[test]
-    fn test_generate() {
+    fn test_create_puzzle() {
         let order = 3;
         let mut grid = Grid::new(order);
+        
+        // println!("{}", grid.candidates_to_string());
+        // println!("{}", grid.digits_to_string());
 
         let ken_ken = create_puzzle(&mut grid);
-        //let mut grid = solver.grid;
+
+        grid = Grid::new(order);
+        let status = ken_ken_logical_solver(&mut grid, ken_ken);
 
         assert_eq!(
             SolvedStatus::Complete,
-            kenken_solve::ken_ken_logical_solver(&mut grid, ken_ken)
-        )
+            status
+        );
+
+        // println!("{}", grid.candidates_to_string());
+        // println!("{}", grid.digits_to_string());
     }
 
-    
+
 }

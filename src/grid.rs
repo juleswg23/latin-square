@@ -48,7 +48,7 @@ impl Grid {
     }
 
     // Update the cube data structure to be true or false at (x,y) to bool b
-    pub fn set_candidates_value(&mut self, x: usize, y: usize, n: usize, b: bool) -> () {
+    fn set_candidates_value(&mut self, x: usize, y: usize, n: usize, b: bool) -> () {
         let location = self.get_loc(x, y);
         match b {
             true => {
@@ -142,7 +142,7 @@ impl Grid {
     }
 
     // Set digits value to 0 at location (x, y)
-    pub fn reset_digits_value(&mut self, x: usize, y: usize) -> () {
+    fn reset_digits_value(&mut self, x: usize, y: usize) -> () {
         self.set_digits_value(x, y, 0);
     }
 
@@ -198,7 +198,8 @@ impl Grid {
         //old_data
     }
 
-    pub fn place_digit_xy_deepcopy(
+    // TODO maybe remove
+    fn place_digit_xy_deepcopy(
         &mut self,
         x: usize,
         y: usize,
@@ -209,7 +210,8 @@ impl Grid {
         old_data
     }
 
-    pub fn place_digit_flat(&mut self, flat_index: usize, n: usize) -> () {
+    // TODO maybe remove
+    fn place_digit_flat(&mut self, flat_index: usize, n: usize) -> () {
         let (x, y) = math::xy_pair(flat_index, self.order());
         self.place_digit_xy(x, y, n)
     }
