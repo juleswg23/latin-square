@@ -1,6 +1,7 @@
 // #![allow(unreachable_code)]
 // #![allow(unused_mut)]
 // #![allow(unused_variables)]
+#![allow(dead_code)]
 
 use std::env;
 mod generator;

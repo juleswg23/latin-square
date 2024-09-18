@@ -1,7 +1,4 @@
-// #![allow(dead_code)]
-
-use itertools::Itertools;
-
+//#![allow(unused_variables)]
 /// Enum for the solver to track the status of completion
 #[derive(Debug, PartialEq)]
 pub enum SolvedStatus {
@@ -11,6 +8,8 @@ pub enum SolvedStatus {
 }
 
 pub mod latin_solve {
+    #![allow(unused_variables)]
+
     use crate::grid::Grid;
     use crate::latin::SolvedStatus;
     use crate::math::math;
@@ -396,7 +395,7 @@ pub mod latin_solve {
         }
 
         #[test]
-        fn test_full_solve() {
+        fn full_solve() {
             let mut g = Grid::new(3);
             g.set_candidates_available(0, 0, 0b110);
             g.set_candidates_available(0, 1, 0b110);
@@ -414,6 +413,23 @@ pub mod latin_solve {
             //assert!(check_solved(&mut g)); TODO
             // println!("{}", g.cube_to_string());
             // println!("{}", g.grid_to_string());
+        }
+
+        #[test]
+        fn empty_grid_solve() {
+            let mut grid = Grid::new(3);
+            let output = stepped_logical_solver(&mut grid);
+            assert_eq!(output, SolvedStatus::Incomplete);
+        }
+
+        #[test]
+        fn conflicting_grid_solve() {
+            let mut grid = Grid::new(2);
+            grid.set_candidates_available(0, 0, 0b1);
+            grid.set_candidates_available(1, 1, 0b10);
+
+            let output = stepped_logical_solver(&mut grid);
+            assert_eq!(output, SolvedStatus::Broken);
         }
     }
 }

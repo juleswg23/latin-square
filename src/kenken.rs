@@ -1,5 +1,4 @@
 // #![allow(dead_code)]
-use crate::Grid;
 
 // The possible operations on a clue for a KenKen
 #[derive(Clone, Debug, strum_macros::Display)]
@@ -12,8 +11,6 @@ pub enum Operation {
     Unknown,
     NoOp,
 }
-
-// test commit
 
 // A data structure representing each clue of a KenKen puzzle
 #[derive(Debug)]
@@ -380,7 +377,7 @@ pub mod kenken_solve {
     }
 
     // Helper function to call the LatinSolver method of setting available cell values in the candidates.
-    fn update_grid(grid: &mut Grid, region: &Region, mut new_masks: Vec<i32>) {
+    fn update_grid(grid: &mut Grid, region: &Region, new_masks: Vec<i32>) {
         assert_eq!(region.cells().len(), new_masks.len());
 
         for i in 0..region.cells().len() {
@@ -400,10 +397,19 @@ pub mod kenken_solve {
     }
 
     pub fn ken_ken_logical_solver(grid: &mut Grid, ken_ken: KenKen) -> SolvedStatus {
-        for region in ken_ken.regions() {
-            apply_constraint(grid, region);
+        let mut old_grid_candidates: Vec<i32> = vec![];
+        while old_grid_candidates != grid.candidates().clone() {
+            old_grid_candidates = grid.candidates().clone();
+            for region in ken_ken.regions() {
+                apply_constraint(grid, region);
+            }
+            match latin_solve::stepped_logical_solver(grid) {
+                SolvedStatus::Complete => return SolvedStatus::Complete,
+                SolvedStatus::Incomplete => (),
+                SolvedStatus::Broken => return SolvedStatus::Broken,
+            }
         }
-        latin_solve::stepped_logical_solver(grid) // todo
+        SolvedStatus::Incomplete
     }
 
     #[cfg(test)]

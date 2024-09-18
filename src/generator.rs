@@ -1,6 +1,6 @@
 use crate::grid::Grid;
 use crate::kenken::{kenken_solve, Clue, KenKen, Operation, Region};
-use crate::latin::{latin_solve, SolvedStatus};
+use crate::latin::{SolvedStatus};
 
 fn create_puzzle(grid: &mut Grid) -> KenKen {
     grid.place_digit_xy(0, 0, 1);
@@ -43,20 +43,5 @@ mod tests {
         )
     }
 
-    #[test]
-    fn empty_grid_solve() {
-        let mut grid = Grid::new(3);
-        let output = latin_solve::stepped_logical_solver(&mut grid);
-        assert_eq!(output, SolvedStatus::Incomplete);
-    }
-
-    #[test]
-    fn conflicting_grid_solve() {
-        let mut grid = Grid::new(2);
-        grid.set_candidates_available(0, 0, 0b1);
-        grid.set_candidates_available(1, 1, 0b10);
-
-        let output = latin_solve::stepped_logical_solver(&mut grid);
-        assert_eq!(output, SolvedStatus::Broken);
-    }
+    
 }
