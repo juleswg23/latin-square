@@ -160,7 +160,7 @@ impl KenKen {
     }
 
     // Sort of workable to_string
-    // Not great when there are clues of more than 1 digit
+    // Not as great when there are clues of more than 1 digit
     pub fn to_string(&self) -> String {
         assert!(self.regions().len() <= 26, "print won't work on too many regions");
 
@@ -207,6 +207,10 @@ impl KenKen {
     pub fn region_n(&self, n: usize) -> &Region {
         assert!(n < self.regions.len(), "Region index out of range.");
         &self.regions[n]
+    }
+    
+    pub fn add_region(&mut self, r: Region) {
+        self.regions.push(r);
     }
 }
 
@@ -445,13 +449,24 @@ pub mod kenken_solve {
         available_masks
     }
 
-    pub fn ken_ken_logical_solver(grid: &mut Grid, ken_ken: KenKen) -> SolvedStatus {
+    pub fn ken_ken_logical_solver(ken_ken: KenKen) -> SolvedStatus {
+        ken_ken_logical_solver_with_grid(&mut Grid::new(ken_ken.order()), ken_ken)
+        // TODO do something with grid, allow me to see it when debugging
+    }
+    
+    pub fn ken_ken_logical_solver_with_grid(grid: &mut Grid, ken_ken: KenKen) -> SolvedStatus {
         let mut old_grid_candidates: Vec<i32> = vec![];
+        
+        // As long as we're making progress
         while old_grid_candidates != grid.candidates().clone() {
             old_grid_candidates = grid.candidates().clone();
+            
+            // Apply constraint to every region
             for region in ken_ken.regions() {
                 apply_constraint(grid, region);
             }
+            
+            // Use our latin solver pruning
             match latin_solve::stepped_logical_solver(grid) {
                 SolvedStatus::Complete => return SolvedStatus::Complete,
                 SolvedStatus::Incomplete => (),
