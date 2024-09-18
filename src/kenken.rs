@@ -733,7 +733,7 @@ mod tests {
     #[test]
     fn ken_ken_to_string() {
         let k = KenKen::read_ken_ken("3: 2/ 00 01: 2- 02 12: 3 22: 9+ 10 11 20 21:".to_string());
-        println!("{}", k.to_string());
+        //println!("{}", k.to_string());
     }
 
 }
