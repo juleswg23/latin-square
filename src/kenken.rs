@@ -393,8 +393,7 @@ pub mod kenken_solve {
         latin_solve::stepped_logical_solver(grid) // todo
 
     }
-
-
+    
     #[cfg(test)]
     mod tests {
         use crate::kenken::{KenKen, kenken_solve};
@@ -628,6 +627,5 @@ pub mod kenken_solve {
             assert_eq!(math::min_bit(number), 3);
         }
     }
-    
 }
 

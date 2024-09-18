@@ -90,6 +90,7 @@ pub mod latin_solve {
     
             // This will be true when there is exactly one set bit in the variable
             if (cell & (cell - 1)) == 0 {
+                // Get the digit referred to by the set but at x,y in the candidates array
                 let (x, y) = math::xy_pair(index, grid.order());
                 let n = (cell as f32).log2() as usize + 1;
                 grid.set_digits_value(x, y, n);
@@ -146,15 +147,14 @@ pub mod latin_solve {
                 let flipped_vec = flip_candidates_structure(&pre_processed);
     
                 result |= match naked_single_finder(&flipped_vec) {
-                    Some((digit, cell)) => {
-    
+                    Some((digit, _)) => {
+                        // flip back to find the axis_b value, then insert
                         let axis_b= (flipped_vec[digit] as f32).log2() as usize;
                         match is_row {
                             true => grid.place_digit_xy(axis_a, axis_b, digit + 1),
                             false => grid.place_digit_xy(axis_b, axis_a, digit + 1),
                         };
-                        
-                        true
+                        true // set result to true
                     },
                     None => false,
                 }
@@ -194,6 +194,7 @@ pub mod latin_solve {
     
     // If two candidates occur only twice in a row or column we can make then a naked pair, and call
     // that function to eliminate candidates from the row/col.
+    // TODO not complete?
     fn hidden_pair(grid: &mut Grid) -> bool {
         let mut result = false;
         for is_row in vec![true, false] {
@@ -216,7 +217,7 @@ pub mod latin_solve {
                 let flipped_vec = flip_candidates_structure(&pre_processed);
     
                 result |= match naked_pair_finder(&flipped_vec) {
-                    Some((digits, cell)) => {
+                    Some((digits, cell)) => { // maybe don't need cell?
                         let mut axis_b: Vec<usize> = vec![];
                         for d in digits {
                             axis_b.push((flipped_vec[d] as f32).log2() as usize);
