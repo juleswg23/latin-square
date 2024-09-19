@@ -22,8 +22,10 @@ fn insert_random_region(ken_ken: &mut KenKen) -> Option<()> {
     let new_target = match new_op { // different ranges depending on the op
         Operation::Add => thread_rng().gen_range(1..region_size *ken_ken.order()),
         Operation::Subtract => thread_rng().gen_range(1..ken_ken.order()),
-        Operation::Multiply => thread_rng().gen_range(1..ken_ken.order().pow(region_size as u32)),
-        Operation::Divide | Operation::Given => thread_rng().gen_range(1..=ken_ken.order()),
+        // Operation::Multiply => thread_rng().gen_range(1..=ken_ken.order().pow(region_size as u32)),
+        Operation::Multiply => ken_ken.order().pow(region_size as u32), // TODO remove
+        Operation::Divide => thread_rng().gen_range(2..=ken_ken.order()),
+        Operation::Given => thread_rng().gen_range(1..=ken_ken.order()),
         _ => panic!("Should never pick these operations")
     };
 
@@ -164,7 +166,7 @@ mod tests {
 
         assert_ne!(0, ken_ken.regions().len());
 
-        let status = ken_ken_logical_solver(ken_ken);
+        let (status, grid) = ken_ken_logical_solver(ken_ken);
 
         assert_eq!(
             SolvedStatus::Broken,

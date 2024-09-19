@@ -321,9 +321,12 @@ pub mod kenken_solve {
 
                     // base case: there is only one other mask to check
                     if other_masks.len() == 1 {
-                        if target % given == 0 {
+                        if target % given == 0 && target / given <= order {
                             // If we can multiply the given by a value in the current cell to
                             // reach the target, update the last elem of new_masks and return true.
+                            if target / given > 60 {
+                                println!("am here");
+                            }
                             if (0b1 << ((target / given) - 1)) & other_masks[0] != 0b0 {
                                 let len = new_masks.len();
                                 new_masks[len - 1] |= 0b1 << ((target / given) - 1);
@@ -449,8 +452,10 @@ pub mod kenken_solve {
         available_masks
     }
 
-    pub fn ken_ken_logical_solver(ken_ken: KenKen) -> SolvedStatus {
-        ken_ken_logical_solver_with_grid(&mut Grid::new(ken_ken.order()), ken_ken)
+    pub fn ken_ken_logical_solver(ken_ken: KenKen) -> (SolvedStatus, Grid) {
+        let mut g = Grid::new(ken_ken.order());
+        let solved = ken_ken_logical_solver_with_grid(&mut g, ken_ken);
+        (solved, g)
         // TODO do something with grid, allow me to see it when debugging
     }
     
@@ -682,9 +687,13 @@ pub mod kenken_solve {
                 KenKen::read_ken_ken("3: 2/ 00 01: 2- 02 12: 2 22: 9+ 10 11 20 21:".to_string());
             let mut grid: Grid = Grid::new(k.order());
             for region in k.regions() {
-                kenken_solve::apply_constraint(&mut grid, region);
+                apply_constraint(&mut grid, region);
             }
             assert_eq!(*grid.get_candidates_available(2, 2), 0b010);
+
+            let (solved, grid) = ken_ken_logical_solver(k);
+            
+            println!("{:?} \n {}", solved, grid.candidates_to_string());
 
             let k = KenKen::read_ken_ken(
                 "4: 12* 00 01 11: 6+ 02 03 12: 2/ 10 20: 1- 13 23: 1 30: 1- 21 31: 8* 22 32 33:"
@@ -695,6 +704,13 @@ pub mod kenken_solve {
                 kenken_solve::apply_constraint(&mut grid, region);
             }
             assert_eq!(*grid.get_candidates_available(3, 0), 0b0001);
+        }
+
+        #[test]
+        fn broken_puzzle() {
+            let k = KenKen::read_ken_ken("3: 81* 00 01 02 11: 81* 10 20 22 21: 3 12:".to_string());
+            let (solved, grid) = ken_ken_logical_solver(k);
+            assert_eq!(SolvedStatus::Broken, solved);
         }
 
         #[test]

@@ -161,6 +161,7 @@ pub mod latin_solve {
     // We check for 'naked' pairs. For example, if we have two pairs, e.g. 3-4 and 3-4 in the same
     // row or column, then both 3 and 4 must occupy those squares (in what ever order). 3 and 4
     // can then be eliminated from the rest of the row and column.
+    // TODO There is a problem when we find a pair in a row that's already pruned down
     fn naked_pair(grid: &mut Grid) -> bool {
         assert!(grid.order() > 2); // TODO this fails for a 2x2 grid, requires order > 2
 
@@ -170,7 +171,7 @@ pub mod latin_solve {
                 // A vector of just the row or column (axis) candidates
                 let axis_vec = grid.get_candidates_vector(axis_a, is_row);
 
-                result |= match naked_pair_finder(&axis_vec) {
+                match naked_pair_finder(&axis_vec) {
                     Some((indices, available)) => {
                         for i in 0..grid.order() {
                             if (0b1 << i) & available != 0 {
@@ -178,9 +179,8 @@ pub mod latin_solve {
                                     grid.remove_candidate_axis(axis_a, 0b1 << i, is_row, &indices);
                             }
                         }
-                        true
                     }
-                    None => false,
+                    None => (),
                 }
             }
         }
