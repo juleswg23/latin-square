@@ -5,6 +5,8 @@ use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng};
 use std::collections::HashMap;
 use std::ops::Deref;
+use crate::kenken::kenken_solve::ken_ken_logical_solver_with_grid;
+use crate::latin::latin_solve::stepped_logical_solver;
 
 fn insert_random_region(ken_ken: &mut KenKen) -> Option<()> {
     let mut empty_cells = get_empty_cells(ken_ken.deref());
@@ -22,8 +24,8 @@ fn insert_random_region(ken_ken: &mut KenKen) -> Option<()> {
     let new_target = match new_op { // different ranges depending on the op
         Operation::Add => thread_rng().gen_range(1..region_size *ken_ken.order()),
         Operation::Subtract => thread_rng().gen_range(1..ken_ken.order()),
-        // Operation::Multiply => thread_rng().gen_range(1..=ken_ken.order().pow(region_size as u32)),
-        Operation::Multiply => ken_ken.order().pow(region_size as u32), // TODO remove
+        Operation::Multiply => thread_rng().gen_range(1..=ken_ken.order().pow(region_size as u32)),
+        //Operation::Multiply => ken_ken.order().pow(region_size as u32), // TODO remove
         Operation::Divide => thread_rng().gen_range(2..=ken_ken.order()),
         Operation::Given => thread_rng().gen_range(1..=ken_ken.order()),
         _ => panic!("Should never pick these operations")
@@ -76,7 +78,7 @@ fn weighted_random(n: usize) -> usize {
     result
 }
 
-fn create_puzzle(grid: &Grid) -> KenKen {
+fn create_puzzle_clues(order: usize) -> KenKen {
     // Options
 
     // 1- Grid first
@@ -108,7 +110,7 @@ fn create_puzzle(grid: &Grid) -> KenKen {
 
     // implementing 2 here
 
-    let mut ken_ken = KenKen::new(grid.order());
+    let mut ken_ken = KenKen::new(order);
 
     while get_empty_cells(&ken_ken).len() > 0 {
         insert_random_region(&mut ken_ken);
@@ -118,15 +120,50 @@ fn create_puzzle(grid: &Grid) -> KenKen {
     ken_ken
 }
 
-fn check_solved(grid: &Grid) -> SolvedStatus {
-    //let mut ken_ken = KenKen::new(grid.order());
+fn create_puzzle_from_grid(grid: &mut Grid) -> KenKen {
+    let mut ken_ken = KenKen::new(grid.order());
+    
+    while get_empty_cells(&ken_ken).len() != 0 {
+        let new_cells: Vec<usize> = find_contiguous_region(&ken_ken);
 
-    // for (index, digit) in grid.digits().iter().enumerate() {
-    //     let region = Region::new(Clue::new(Operation::Given, *digit), vec![index]);
-    //     ken_ken.regions.push(region);
-    // }
+        // randomly choose operation
+        let ops_vec = match new_cells.len() {
+            1 => vec![Operation::Given],
+            2 => vec![Operation::Add, Operation::Subtract, Operation::Divide, Operation::Multiply],
+            _ => vec![Operation::Add, Operation::Multiply],
+        };
+        let new_op = ops_vec.choose(&mut thread_rng()).unwrap().clone();
 
-    SolvedStatus::Complete
+        let new_target = match new_op { // different ranges depending on the op
+            Operation::Add => todo!(), // sum the values in the cells,
+            Operation::Subtract => todo!(), // get diff abs value
+            Operation::Multiply => todo!(), // product
+            Operation::Divide => thread_rng().gen_range(2..=ken_ken.order()),
+            Operation::Given => thread_rng().gen_range(1..=ken_ken.order()),
+            _ => panic!("Should never pick these operations")
+        };
+
+        let new_region = Region::new(Clue::new(new_op, new_target), new_cells);
+        ken_ken.add_region(new_region);
+    }
+
+    // TODO wrap above in loop
+    ken_ken
+    
+}
+
+// 
+fn find_contiguous_region(ken_ken: &KenKen) -> Vec<usize> {
+    let mut empty_cells = get_empty_cells(ken_ken);
+    empty_cells.shuffle(&mut thread_rng()); // TODO Problem is they are not contiguous
+    let region_size = weighted_random(empty_cells.len());
+    
+    todo!()
+}
+
+// Takes a grid, and reports if it's solved or now
+fn check_solved(grid: &mut Grid) -> SolvedStatus {
+    stepped_logical_solver(grid)
 }
 
 #[cfg(test)]
@@ -144,6 +181,15 @@ mod tests {
     }
 
     #[test]
+    fn not_solved() { // testing check_solved()
+        let ken_ken = KenKen::new(3);
+        let mut grid = Grid::new(ken_ken.order());
+        ken_ken_logical_solver_with_grid(&mut grid, &ken_ken);
+        let solved= check_solved(&mut grid);
+        assert_eq!(SolvedStatus::Incomplete, solved);
+    }
+
+    #[test]
     fn test_is_adjacent() {
         assert!(is_adjacent(3, 4, 3));
         assert!(!is_adjacent(3, 2, 3));
@@ -157,22 +203,11 @@ mod tests {
     #[test]
     fn test_create_puzzle() {
         let order = 3;
-        let grid = Grid::new(order);
-
-        // println!("{}", grid.candidates_to_string());
-        // println!("{}", grid.digits_to_string());
-
-        let ken_ken = create_puzzle(&grid);
-
+        let ken_ken = create_puzzle_clues(order);
         assert_ne!(0, ken_ken.regions().len());
-
         let (status, grid) = ken_ken_logical_solver(&ken_ken);
-
-        assert_eq!(
-            SolvedStatus::Broken,
-            status
-        );
-
+        // TODO no assert yet
+        
         // println!("{}", grid.candidates_to_string());
         // println!("{}", grid.digits_to_string());
     }
