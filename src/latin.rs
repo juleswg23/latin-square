@@ -81,7 +81,6 @@ pub mod latin_solve {
         for index in 0..grid.candidates().len() {
             let cell = grid.candidates()[index];
             if cell == 0b0 {
-                //panic!("Shouldn't ever return broken"); //TODO decide what to do with a broken grid
                 return SolvedStatus::Broken;
             }
 
@@ -94,6 +93,9 @@ pub mod latin_solve {
             } else {
                 outcome = SolvedStatus::Incomplete;
             }
+        }
+        if outcome == SolvedStatus::Complete {
+            outcome = is_solved_helper(grid);
         }
         outcome
     }
@@ -242,6 +244,26 @@ pub mod latin_solve {
     // and call that function to eliminate candidates from the row/col.
     fn hidden_triple(grid: &mut Grid) -> () {
         todo!()
+    }
+
+    // Takes a grid, returns solvedStatus::complete if the digits grid is valid
+    fn is_solved_helper(grid: &Grid) -> SolvedStatus {
+        for i in 0..grid.order() {
+            let mut row_i: HashMap<usize, bool> = HashMap::new();
+            let mut col_i: HashMap<usize, bool> = HashMap::new();
+            for j in 0..grid.order() {
+                match row_i.get(&grid.get_digits_value(i, j)) {
+                    Some(_) => {return SolvedStatus::Broken},
+                    None => { row_i.entry(grid.get_digits_value(i, j)).or_insert(true); },
+                }
+                match col_i.get(&grid.get_digits_value(j, i)) {
+                    Some(_) => {return SolvedStatus::Broken},
+                    None => { col_i.entry(grid.get_digits_value(j, i)).or_insert(true); },
+                }
+
+            }
+        }
+        SolvedStatus::Complete
     }
 
     pub fn stepped_logical_solver(grid: &mut Grid) -> SolvedStatus {

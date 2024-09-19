@@ -452,14 +452,14 @@ pub mod kenken_solve {
         available_masks
     }
 
-    pub fn ken_ken_logical_solver(ken_ken: KenKen) -> (SolvedStatus, Grid) {
+    pub fn ken_ken_logical_solver(ken_ken: &KenKen) -> (SolvedStatus, Grid) {
         let mut g = Grid::new(ken_ken.order());
         let solved = ken_ken_logical_solver_with_grid(&mut g, ken_ken);
         (solved, g)
         // TODO do something with grid, allow me to see it when debugging
     }
     
-    pub fn ken_ken_logical_solver_with_grid(grid: &mut Grid, ken_ken: KenKen) -> SolvedStatus {
+    pub fn ken_ken_logical_solver_with_grid(grid: &mut Grid, ken_ken: &KenKen) -> SolvedStatus {
         let mut old_grid_candidates: Vec<i32> = vec![];
         
         // As long as we're making progress
@@ -691,10 +691,8 @@ pub mod kenken_solve {
             }
             assert_eq!(*grid.get_candidates_available(2, 2), 0b010);
 
-            let (solved, grid) = ken_ken_logical_solver(k);
+            let (solved, grid) = ken_ken_logical_solver(&k);
             
-            println!("{:?} \n {}", solved, grid.candidates_to_string());
-
             let k = KenKen::read_ken_ken(
                 "4: 12* 00 01 11: 6+ 02 03 12: 2/ 10 20: 1- 13 23: 1 30: 1- 21 31: 8* 22 32 33:"
                     .to_string(),
@@ -709,7 +707,21 @@ pub mod kenken_solve {
         #[test]
         fn broken_puzzle() {
             let k = KenKen::read_ken_ken("3: 81* 00 01 02 11: 81* 10 20 22 21: 3 12:".to_string());
-            let (solved, grid) = ken_ken_logical_solver(k);
+            let (solved, grid) = ken_ken_logical_solver(&k);
+            assert_eq!(SolvedStatus::Broken, solved);
+
+            let k = KenKen::read_ken_ken("3: 12+ 00 01 02 10 11 10 20 22: 2 21:".to_string());
+            let (solved, grid) = ken_ken_logical_solver(&k);
+            
+            println!("here\n {:?} \n {}", solved, grid.candidates_to_string());
+            println!("{}", k.to_string());
+
+            // assert_eq!(SolvedStatus::Broken, solved); // TODO eventually make sure this assert passes
+        }
+        #[test]
+        fn broken_grid() {
+            let k = KenKen::read_ken_ken("3: 81* 00 01 02 10:".to_string());
+            let (solved, grid) = ken_ken_logical_solver(&k);
             assert_eq!(SolvedStatus::Broken, solved);
         }
 

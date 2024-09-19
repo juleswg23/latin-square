@@ -166,7 +166,7 @@ mod tests {
 
         assert_ne!(0, ken_ken.regions().len());
 
-        let (status, grid) = ken_ken_logical_solver(ken_ken);
+        let (status, grid) = ken_ken_logical_solver(&ken_ken);
 
         assert_eq!(
             SolvedStatus::Broken,
