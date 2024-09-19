@@ -33,6 +33,21 @@ fn insert_random_region(ken_ken: &mut KenKen) -> Option<()> {
     Some(())
 }
 
+// Check if two cells are adjacent
+fn is_adjacent(order: usize, first: usize, second: usize) -> bool {
+    assert!(order > 1, "A grid must be at least 2x2");
+
+    let first_x = first / order;
+    let first_y = first % order;
+    let second_x = second / order;
+    let second_y = second % order;
+
+    assert!(first_x < order, "first_x value out of bounds");
+    assert!(second_x < order, "second_x value out of bounds");
+
+    (first_x.abs_diff(second_x) + first_y.abs_diff(second_y)) == 1
+}
+
 fn get_empty_cells(ken_ken: &KenKen) -> Vec<usize> {
     let vec: Vec<usize> = (0..ken_ken.order() * ken_ken.order()).collect();
     let mut result: HashMap<usize, bool> = vec.into_iter().map(|x| (x, true)).collect::<HashMap<_, _>>();
@@ -124,6 +139,16 @@ mod tests {
         assert_ne!(None, result);
         assert_eq!(1, ken_ken.regions().len());
         //println!("{}", ken_ken.to_string());
+    }
+
+    #[test]
+    fn test_is_adjacent() {
+        assert!(is_adjacent(3, 4, 3));
+        assert!(!is_adjacent(3, 2, 3));
+        assert!(is_adjacent(3, 2, 5));
+        assert!(!is_adjacent(3, 2, 2));
+        assert!(!is_adjacent(2, 1, 2));
+        assert!(!is_adjacent(2, 0, 3));
     }
 
 
