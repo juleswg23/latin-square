@@ -34,7 +34,7 @@ impl Clue {
             Operation::Divide => "/",
             Operation::Given => "G",
             Operation::Unknown => "Unknown",
-            Operation::NoOp => "No-op"
+            Operation::NoOp => "No-op",
         };
 
         self.target.to_string() + op_string
@@ -162,16 +162,18 @@ impl KenKen {
     // Sort of workable to_string
     // Not as great when there are clues of more than 1 digit
     pub fn to_string(&self) -> String {
-        assert!(self.regions().len() <= 26, "print won't work on too many regions");
+        assert!(
+            self.regions().len() <= 26,
+            "print won't work on too many regions"
+        );
 
-        let mut arr: Vec<String> = vec!["".to_string(); self.order()*self.order()];
+        let mut arr: Vec<String> = vec!["".to_string(); self.order() * self.order()];
 
         for (index, region) in self.regions().iter().enumerate() {
             for cell in region.cells() {
                 arr[*cell] = ((b'a' + index as u8) as char).to_string() + &region.clue.to_string();
             }
         }
-
 
         let mut result = String::from("");
 
@@ -208,7 +210,7 @@ impl KenKen {
         assert!(n < self.regions.len(), "Region index out of range.");
         &self.regions[n]
     }
-    
+
     pub fn add_region(&mut self, r: Region) {
         self.regions.push(r);
     }
@@ -458,19 +460,19 @@ pub mod kenken_solve {
         (solved, g)
         // TODO do something with grid, allow me to see it when debugging
     }
-    
+
     pub fn ken_ken_logical_solver_with_grid(grid: &mut Grid, ken_ken: &KenKen) -> SolvedStatus {
         let mut old_grid_candidates: Vec<i32> = vec![];
-        
+
         // As long as we're making progress
         while old_grid_candidates != grid.candidates().clone() {
             old_grid_candidates = grid.candidates().clone();
-            
+
             // Apply constraint to every region
             for region in ken_ken.regions() {
                 apply_constraint(grid, region);
             }
-            
+
             // Use our latin solver pruning
             match latin_solve::stepped_logical_solver(grid) {
                 SolvedStatus::Complete => return SolvedStatus::Complete,
@@ -692,7 +694,7 @@ pub mod kenken_solve {
             assert_eq!(*grid.get_candidates_available(2, 2), 0b010);
 
             let (solved, grid) = ken_ken_logical_solver(&k);
-            
+
             let k = KenKen::read_ken_ken(
                 "4: 12* 00 01 11: 6+ 02 03 12: 2/ 10 20: 1- 13 23: 1 30: 1- 21 31: 8* 22 32 33:"
                     .to_string(),
@@ -712,7 +714,7 @@ pub mod kenken_solve {
 
             let k = KenKen::read_ken_ken("3: 12+ 00 01 02 10 11 10 20 22: 2 21:".to_string());
             let (solved, grid) = ken_ken_logical_solver(&k);
-            
+
             println!("here\n {:?} \n {}", solved, grid.candidates_to_string());
             println!("{}", k.to_string());
 

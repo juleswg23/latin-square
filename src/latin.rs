@@ -253,14 +253,17 @@ pub mod latin_solve {
             let mut col_i: HashMap<usize, bool> = HashMap::new();
             for j in 0..grid.order() {
                 match row_i.get(&grid.get_digits_value(i, j)) {
-                    Some(_) => {return SolvedStatus::Broken},
-                    None => { row_i.entry(grid.get_digits_value(i, j)).or_insert(true); },
+                    Some(_) => return SolvedStatus::Broken,
+                    None => {
+                        row_i.entry(grid.get_digits_value(i, j)).or_insert(true);
+                    }
                 }
                 match col_i.get(&grid.get_digits_value(j, i)) {
-                    Some(_) => {return SolvedStatus::Broken},
-                    None => { col_i.entry(grid.get_digits_value(j, i)).or_insert(true); },
+                    Some(_) => return SolvedStatus::Broken,
+                    None => {
+                        col_i.entry(grid.get_digits_value(j, i)).or_insert(true);
+                    }
                 }
-
             }
         }
         SolvedStatus::Complete
