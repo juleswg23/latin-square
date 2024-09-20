@@ -130,6 +130,10 @@ impl Grid {
         self.digits[self.get_loc(x, y)]
     }
 
+    pub fn get_digits_flat(&self, cell: usize) -> usize {
+        self.digits[cell]
+    }
+
     // Set the final digit in the grid of where the digit belongs
     pub fn set_digits_value(&mut self, x: usize, y: usize, n: usize) -> () {
         // First assert attempt
