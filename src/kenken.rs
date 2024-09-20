@@ -715,8 +715,8 @@ pub mod kenken_solve {
             let k = KenKen::read_ken_ken("3: 12+ 00 01 02 10 11 10 20 22: 2 21:".to_string());
             let (solved, grid) = ken_ken_logical_solver(&k);
 
-            println!("here\n {:?} \n {}", solved, grid.candidates_to_string());
-            println!("{}", k.to_string());
+            // println!("here\n {:?} \n {}", solved, grid.candidates_to_string());
+            // println!("{}", k.to_string());
 
             // assert_eq!(SolvedStatus::Broken, solved); // TODO eventually make sure this assert passes
         }
