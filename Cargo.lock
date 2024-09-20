@@ -47,7 +47,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "latin-square"
+name = "latin_square"
 version = "0.1.0"
 dependencies = [
  "itertools",

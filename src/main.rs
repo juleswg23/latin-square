@@ -4,15 +4,9 @@
 #![allow(dead_code)]
 
 use std::env;
-mod generator;
-mod grid;
-mod kenken;
-mod latin;
-mod math;
-
-use crate::grid::Grid;
-use crate::kenken::{Clue, KenKen, Operation, Region};
-use crate::latin::latin_solve;
+use latin_square::grid::Grid;
+use latin_square::kenken::{Clue, KenKen, Operation, Region};
+use latin_square::latin::latin_solve;
 
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
@@ -31,8 +25,7 @@ fn main() {
     println!("{}", g.digits_to_string());
 
     let mut k = KenKen::new(g.order());
-    k.regions
-        .push(Region::new(Clue::new(Operation::Add, 3), vec![3, 4]));
+    k.add_region(Region::new(Clue::new(Operation::Add, 3), vec![3, 4]));
     let r = k.region_n(2);
     println!("{:?}", r.clue());
 }
