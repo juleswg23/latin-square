@@ -1,12 +1,10 @@
 use crate::grid::Grid;
-use crate::kenken::{Clue, KenKen, Operation, Region};
-use crate::latin::SolvedStatus;
+use crate::kenken::{Clue, KenKen, Operation, Region, kenken_solve};
+use crate::latin::{SolvedStatus, latin_solve};
 use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng};
 use std::collections::{HashMap, VecDeque};
 use std::ops::Deref;
-use crate::kenken::kenken_solve::ken_ken_logical_solver_with_grid;
-use crate::latin::latin_solve::stepped_logical_solver;
 
 fn insert_random_region(ken_ken: &mut KenKen) -> Option<()> {
     let mut empty_cells = get_empty_cells(ken_ken.deref());
@@ -207,7 +205,7 @@ fn find_contiguous_region(ken_ken: &KenKen, region_size: usize) -> Vec<usize> {
 
 // Takes a grid, and reports if it's solved or now
 fn check_solved(grid: &mut Grid) -> SolvedStatus {
-    stepped_logical_solver(grid)
+    latin_solve::stepped_logical_solver(grid)
 }
 
 #[cfg(test)]
@@ -228,7 +226,7 @@ mod tests {
     fn not_solved() { // testing check_solved()
         let ken_ken = KenKen::new(3);
         let mut grid = Grid::new(ken_ken.order());
-        ken_ken_logical_solver_with_grid(&mut grid, &ken_ken);
+        kenken_solve::ken_ken_logical_solver_with_grid(&mut grid, &ken_ken);
         let solved= check_solved(&mut grid);
         assert_eq!(SolvedStatus::Incomplete, solved);
     }
