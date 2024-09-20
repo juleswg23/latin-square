@@ -132,7 +132,7 @@ fn create_puzzle_clues(order: usize) -> KenKen {
     ken_ken
 }
 
-/* TODO major issue here is that it's not getting a good distribution of cell sizes. 
+/* TODO major issue here is that it's not getting a good distribution of cell sizes.
  *  Especially when it splits up a double cell into a two ones, and there is another one available
  *  It should try to prioritize looking for another grouping before jumping down to a smaller region.
  *  Or maybe there's a better way to iterate that builds all the regions at once.
@@ -207,6 +207,10 @@ fn generate_target(grid: &Grid, new_cells: &Vec<usize>, new_op: &Operation) -> u
             let first_cell = grid.get_digits_flat(new_cells[0]);
             let second_cell = grid.get_digits_flat(new_cells[1]);
             assert_ne!(first_cell, second_cell, "Cannot have divide region with the same number twice");
+
+            // TODO fix error happening here... maybe handle by switching to subtract
+            assert!(first_cell%second_cell == 0 && second_cell%first_cell == 0, "Ended up with two digits not divisible by eachother");
+
             match first_cell > second_cell {
                 true => first_cell / second_cell,
                 false => second_cell / first_cell,
@@ -328,9 +332,12 @@ mod tests {
         let ken_ken = create_puzzle_from_grid(&grid);
 
         assert_eq!(Vec::<usize>::new(), get_empty_cells(&ken_ken));
+        println!("{}", ken_ken.to_string());
 
-        let (status, grid) = ken_ken_logical_solver(&ken_ken);
-        // TODO no assert yet
+        let (status, mut solved_grid) = ken_ken_logical_solver(&ken_ken);
+
+        assert_ne!(SolvedStatus::Broken, check_solved(&mut solved_grid));
+        // Eventually replace with assert_eq!(SolvedStatus::Complete, check_solved(&mut solved_grid));
     }
 
     #[test]
